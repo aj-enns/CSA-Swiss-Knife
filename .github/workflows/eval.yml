@@ -1,0 +1,114 @@
+# Eval CI — runs Phase 1 (offline) on every PR, Phase 2 (live) on schedule
+name: Eval Suite
+
+on:
+  pull_request:
+    paths:
+      - '.github/instructions/**'
+      - '.github/skills/**'
+      - '.github/copilot-instructions.md'
+      - 'mcp/**'
+      - 'evals/**'
+  schedule:
+    # Weekly on Mondays at 6 AM UTC — full eval suite including live tests
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+    inputs:
+      run_live:
+        description: 'Run live evals (requires Azure RBAC + AZURE_OPENAI_ENDPOINT)'
+        type: boolean
+        default: false
+      model:
+        description: 'Deployment name for live evals'
+        type: string
+        default: 'gpt-4o-mini'
+
+permissions:
+  contents: read
+
+jobs:
+  eval-offline:
+    name: Phase 1 — Offline Evals
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - name: Audit dependencies for vulnerabilities
+        run: npm audit --audit-level moderate
+      - name: Security lint
+        run: npx eslint bin/ scripts/lib/
+      - run: npm run eval
+        env:
+          NODE_ENV: test
+
+      - name: Check for regressions
+        if: always()
+        run: node scripts/eval-persist.js --diff --fail-on-regression --threshold 5
+        continue-on-error: false
+
+      - name: Upload eval results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: eval-results-${{ github.sha }}
+          path: evals/results/latest.json
+
+      - name: Comment PR with eval summary
+        if: github.event_name == 'pull_request' && always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const path = 'evals/results/latest.json';
+            if (!fs.existsSync(path)) return;
+            const data = JSON.parse(fs.readFileSync(path, 'utf8'));
+            const s = data.summary;
+            const emoji = s.level === 'pass' ? '🟢' : s.level === 'review' ? '🟡' : '🔴';
+            const body = [
+              `## ${emoji} Eval Results`,
+              '',
+              `**Overall**: ${(s.overallScore * 100).toFixed(1)}% (${s.level})`,
+              `**Scenarios**: ${s.scenarioCount} total — ${s.passed} passed, ${s.review} review, ${s.failed} failed`,
+              `**Commit**: \`${data.commit}\` | **Phase**: ${data.phase}`,
+            ].join('\n');
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
+
+  eval-live:
+    name: Phase 2 — Live Agent Evals
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
+    needs: eval-offline
+    if: >-
+      github.event_name == 'schedule' ||
+      github.event_name == 'workflow_dispatch' && github.event.inputs.run_live == 'true'
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      - run: npm ci --ignore-scripts
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ secrets.AZURE_CLIENT_ID }}
+          tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+          subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      - run: npm run eval:live
+        env:
+          AZURE_OPENAI_ENDPOINT: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          EVAL_MODEL: ${{ github.event.inputs.model || 'gpt-4o-mini' }}
+          NODE_ENV: test

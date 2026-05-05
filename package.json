@@ -1,0 +1,73 @@
+{
+  "name": "mcaps-iq",
+  "version": "0.3.2",
+  "private": true,
+  "type": "module",
+  "description": "AI-powered sales operations toolkit for MCAPS — one-command setup",
+  "bin": {
+    "mcaps": "./bin/mcaps.js"
+  },
+  "scripts": {
+    "setup": "node scripts/init.js",
+    "check": "node scripts/init.js --check",
+    "auth:packages": "node scripts/github-packages-auth.js",
+    "auth:packages:check": "node scripts/github-packages-auth.js --check",
+    "postinstall": "node scripts/init.js",
+    "docs:install": "pip install -r site/requirements.txt",
+    "docs:serve": "mkdocs serve -f site/mkdocs.yml",
+    "docs:build": "mkdocs build -f site/mkdocs.yml",
+    "docs:deploy": "mkdocs gh-deploy --force -f site/mkdocs.yml",
+    "eval": "vitest run --config vitest.config.ts",
+    "lint": "eslint bin/ scripts/lib/",
+    "lint:fix": "eslint bin/ scripts/lib/ --fix",
+    "eval:watch": "vitest --config vitest.config.ts",
+    "eval:live": "vitest run --config evals/vitest.live.config.ts",
+    "eval:live:watch": "vitest --config evals/vitest.live.config.ts",
+    "eval:all": "vitest run --config vitest.config.ts && vitest run --config evals/vitest.live.config.ts",
+    "eval:baseline": "vitest run --config vitest.config.ts && node scripts/eval-persist.js --baseline --update",
+    "eval:diff": "node scripts/eval-persist.js --diff",
+    "eval:history": "node scripts/eval-persist.js --history",
+    "eval:trace": "npx tsx evals/traces/trace-harness.ts",
+    "fixtures:capture": "node scripts/capture-fixtures.js",
+    "fixtures:capture:dry": "node scripts/capture-fixtures.js --dry-run",
+    "fixtures:capture:redact": "node scripts/capture-fixtures.js --redact",
+    "vault:env": "node scripts/setup-vault-env.js",
+    "vault:env:check": "node scripts/setup-vault-env.js --check",
+    "vault:env:remove": "node scripts/setup-vault-env.js --remove",
+    "vault:reconfigure": "node scripts/init.js --reconfigure-vault",
+    "vault:init": "node scripts/setup-vault.js",
+    "vault:init:check": "node scripts/setup-vault.js --check",
+    "vault:sync": "node scripts/setup-vault.js --sync-only",
+    "vault:scaffold": "node scripts/setup-vault.js --scaffold-only",
+    "squad:setup": "node scripts/setup-squad.js",
+    "squad:check": "node scripts/setup-squad.js --check",
+    "dashboard:test": "node --test .github/extensions/mcaps-iq-dashboard/tests/extension-tests.mjs"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@azure/identity": "^4.13.0",
+    "@modelcontextprotocol/sdk": "^1.12.1",
+    "express": "^5.2.1",
+    "express-rate-limit": "^8.3.2",
+    "mermaid": "^10.9.5",
+    "openai": "^6.29.0",
+    "unzipper": "^0.12.3",
+    "ws": "^8.18.0",
+    "xml2js": "^0.6.2"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@github/copilot-sdk": "^0.2.0",
+    "docx": "^9.6.1",
+    "eslint": "^10.1.0",
+    "eslint-plugin-security": "^4.0.0",
+    "playwright": "^1.59.1",
+    "pptxgenjs": "^4.0.1",
+    "tsx": "^4.21.0",
+    "typescript": "^5.7.3",
+    "vitest": "^4.0.18",
+    "yaml": "^2.8.2"
+  }
+}

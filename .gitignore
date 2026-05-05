@@ -1,0 +1,121 @@
+node_modules/
+.beads
+# Auth token cache (contains refresh tokens — never commit)
+.auth-cache/
+
+# Logs
+*.log
+*.bak
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Test output
+coverage/
+.nyc_output/
+
+# Build/cache output
+dist/
+build/
+.cache/
+
+# Environment and local overrides
+.env
+.env.*
+!.env.example
+.venv/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# OS / editor
+.DS_Store
+.vscode/*.code-workspace
+.vscode/.mcp-cli.json
+
+# Local agent memory (untracked)
+.agent-memory/
+
+# M365 auth token cache (sensitive — contains refresh tokens)
+.auth-cache/
+
+.copilot
+
+# LenVolk
+samples/lenvolk/.docs
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+!scripts/lib/
+!.github/extensions/*/lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+pip-wheel-metadata/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+.pytest_cache/
+.coverage
+.env
+venv/
+ENV/
+env/
+
+.connect/
+.vscode/
+
+# Captured eval fixtures (may contain PII from live MCP servers)
+# Hand-crafted scenario YAML files are tracked; all captured JSON is ignored.
+evals/fixtures/crm-responses/
+evals/fixtures/oil-responses/
+evals/fixtures/m365-responses/
+evals/fixtures/capture-manifest.json
+
+# Eval results (latest + history are ephemeral; baseline is committed)
+evals/results/latest.json
+evals/results/history/
+evals/results/diff-report.md
+
+# Captured traces (golden traces are committed; raw captures are ephemeral)
+evals/traces/captured/
+
+# Auto-generated tool definitions (regenerated from live MCP servers)
+evals/generated/
+# Squad: ignore runtime state (logs, inbox, sessions)
+.squad/orchestration-log/
+.squad/log/
+.squad/decisions/inbox/
+.squad/sessions/
+# Squad: SubSquad activation file (local to this machine)
+.squad-workstream
+.squad
+squad-*
+
+# Playwright MCP temp data
+.playwright-mcp/
+.vault/
+
+# MCAPS IQ Dashboard local settings (may contain priority account TPIDs)
+.mcaps-iq-settings.json
+
+# MCAPS IQ Dashboard local cron schedules
+.mcaps-iq-schedules.json

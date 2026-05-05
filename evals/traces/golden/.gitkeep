@@ -1,0 +1,8 @@
+# Golden Traces
+# Human-verified agent traces for regression testing.
+# See evals/traces/README.md for format documentation.
+#
+# To add a golden trace:
+#   1. Run a live eval with --capture-trace
+#   2. Review: npm run eval:trace -- --review captured/<file>
+#   3. Promote: npm run eval:trace -- --promote captured/<file> --quality good

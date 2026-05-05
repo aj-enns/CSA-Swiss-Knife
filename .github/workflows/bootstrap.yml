@@ -1,0 +1,237 @@
+# Bootstrap CI — validates bootstrap scripts across OS matrix
+name: Bootstrap
+
+on:
+  pull_request:
+    paths:
+      - 'scripts/bootstrap.sh'
+      - 'scripts/bootstrap.ps1'
+      - 'scripts/init.js'
+      - 'scripts/init.sh'
+      - 'scripts/init.ps1'
+      - 'scripts/github-packages-auth.js'
+      - 'scripts/setup-vault-env.js'
+      - 'scripts/setup-vault.js'
+      - '.github/actions/setup-github-packages/**'
+      - '.github/workflows/bootstrap.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'scripts/bootstrap.sh'
+      - 'scripts/bootstrap.ps1'
+      - 'scripts/init.js'
+      - 'scripts/init.sh'
+      - 'scripts/init.ps1'
+      - 'scripts/github-packages-auth.js'
+      - 'scripts/setup-vault-env.js'
+      - 'scripts/setup-vault.js'
+      - '.github/actions/setup-github-packages/**'
+      - '.github/workflows/bootstrap.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  # ── Phase 1: Script syntax validation (fast, all OSes) ──────────────
+  lint-scripts:
+    name: Lint scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: ShellCheck — bootstrap.sh
+        run: shellcheck scripts/bootstrap.sh scripts/init.sh
+        env:
+          SHELLCHECK_OPTS: '--severity=warning'
+
+      - name: PSScriptAnalyzer — PowerShell scripts
+        shell: pwsh
+        run: |
+          $settings = ".github/linters/PSScriptAnalyzerSettings.psd1"
+          $results  = @()
+          $results += Invoke-ScriptAnalyzer -Path scripts/bootstrap.ps1 -Settings $settings
+          $results += Invoke-ScriptAnalyzer -Path scripts/init.ps1 -Settings $settings
+          if ($results.Count -gt 0) {
+            $results | Format-Table -AutoSize
+            throw "$($results.Count) PSScriptAnalyzer issue(s) found"
+          }
+          Write-Host "✔ PowerShell scripts pass PSScriptAnalyzer"
+
+  # ── Phase 2: init.js --check across OS matrix ──────────────────────
+  check-prereqs:
+    name: "Prereq check — ${{ matrix.os }} / node ${{ matrix.node }}"
+    needs: lint-scripts
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['18', '20', '22']
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node }}
+
+      - name: "init.js --check"
+        shell: bash
+        run: node scripts/init.js --check
+        # init.js --check exits 0 even when optional tools (az, gh) are missing;
+        # it only fails on hard prereqs (node, npm, git) which CI runners have.
+
+  # ── Phase 3: Bootstrap script --check-only on each OS ──────────────
+  bootstrap-check:
+    name: "Bootstrap check — ${{ matrix.os }}"
+    needs: lint-scripts
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Run bootstrap --check-only (bash)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./scripts/bootstrap.sh --check-only
+        # --check-only exits non-zero if optional tools are missing — that's
+        # expected on bare CI runners. We use continue-on-error so the job
+        # reports which tools were found/missing without failing the build.
+        continue-on-error: true
+
+      - name: Run bootstrap --check-only (pwsh)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\scripts\bootstrap.ps1 -CheckOnly
+        continue-on-error: true
+
+  # ── Phase 4: Bootstrap install simulation (skip clone + auth) ──────
+  bootstrap-dry-run:
+    name: "Bootstrap dry run — ${{ matrix.os }}"
+    needs: [check-prereqs, bootstrap-check]
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      # Pre-install tools that the scripts would normally install via
+      # brew/winget (CI runners may already have them but this ensures
+      # the script's "already installed" path is exercised).
+      - name: Pre-install Azure CLI (Ubuntu)
+        if: runner.os == 'Linux'
+        run: |
+          if ! command -v az &>/dev/null; then
+            curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+          fi
+
+      - name: Pre-install Azure CLI (macOS)
+        if: runner.os == 'macOS'
+        run: |
+          if ! command -v az &>/dev/null; then
+            brew install azure-cli
+          fi
+
+      - name: Pre-install Azure CLI (Windows)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: |
+          if (-not (Get-Command az -ErrorAction SilentlyContinue)) {
+            winget install Microsoft.AzureCLI --silent --accept-package-agreements --accept-source-agreements
+            $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+          }
+
+      - name: Run bootstrap (bash)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: ./scripts/bootstrap.sh --skip-clone --skip-auth
+        continue-on-error: true
+
+      - name: Run bootstrap (pwsh)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: .\scripts\bootstrap.ps1 -SkipClone -SkipAuth
+        continue-on-error: true
+
+  # ── Phase 5: Validate private package resolution ───────────────────
+  # Verifies that the MCP server packages listed in .vscode/mcp.json
+  # are resolvable from their respective registries. Requires a PAT
+  # with read:packages scope stored as GH_PACKAGES_TOKEN repo secret.
+  #
+  # To create the secret:
+  #   1. Create a Classic PAT at https://github.com/settings/tokens
+  #      with scope: read:packages
+  #   2. Save it as repo secret GH_PACKAGES_TOKEN in Settings → Secrets
+  #
+  # This job is skipped gracefully if the secret is not configured.
+  validate-packages:
+    name: Validate MCP packages
+    needs: lint-scripts
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Check if GH_PACKAGES_TOKEN is available
+        id: auth-check
+        run: |
+          if [[ -n "${{ secrets.GH_PACKAGES_TOKEN }}" ]]; then
+            echo "has_token=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_token=false" >> "$GITHUB_OUTPUT"
+            echo "⚠ GH_PACKAGES_TOKEN secret not configured — skipping private package validation"
+            echo "  To enable: add a Classic PAT with read:packages scope as GH_PACKAGES_TOKEN"
+          fi
+
+      - name: Setup GitHub Packages auth
+        if: steps.auth-check.outputs.has_token == 'true'
+        uses: ./.github/actions/setup-github-packages
+        with:
+          token: ${{ secrets.GH_PACKAGES_TOKEN }}
+
+      # ── Private packages (GitHub Packages) ──
+      - name: "Validate @microsoft/msx-mcp-server (private)"
+        if: steps.auth-check.outputs.has_token == 'true'
+        run: |
+          VERSION=$(npm view @microsoft/msx-mcp-server@latest version --registry https://npm.pkg.github.com 2>&1) \
+            && echo "✔ @microsoft/msx-mcp-server@${VERSION}" \
+            || { echo "✖ Failed to resolve @microsoft/msx-mcp-server"; exit 1; }
+
+      - name: "Validate @jinlee794/obsidian-intelligence-layer (private)"
+        if: steps.auth-check.outputs.has_token == 'true'
+        run: |
+          VERSION=$(npm view @jinlee794/obsidian-intelligence-layer@latest version --registry https://npm.pkg.github.com 2>&1) \
+            && echo "✔ @jinlee794/obsidian-intelligence-layer@${VERSION}" \
+            || { echo "✖ Failed to resolve @jinlee794/obsidian-intelligence-layer"; exit 1; }
+
+      # ── Public packages (npmjs) — always validated ──
+      - name: "Validate @microsoft/workiq (public npm)"
+        run: |
+          VERSION=$(npm view @microsoft/workiq@latest version 2>&1) \
+            && echo "✔ @microsoft/workiq@${VERSION}" \
+            || { echo "✖ Failed to resolve @microsoft/workiq"; exit 1; }
+
+      - name: Package validation summary
+        if: always()
+        run: |
+          if [[ "${{ steps.auth-check.outputs.has_token }}" == "true" ]]; then
+            echo "✔ All MCP packages validated (private + public)"
+          else
+            echo "⚠ Only public packages validated — add GH_PACKAGES_TOKEN secret for full coverage"
+          fi

@@ -1,0 +1,213 @@
+cases:
+  # ── CSAM scenarios ──────────────────────────────────────────────
+  - id: csam-milestone-health
+    query: "What's the milestone health for Contoso?"
+    role: CSAM
+    stage: 4
+    expected: [milestone-health-review/SKILL.md]
+    not_expected:
+      - pipeline-qualification/SKILL.md
+      - proof-plan-orchestration/SKILL.md
+
+  - id: csam-value-realization
+    query: "What value has the customer realized from our delivery?"
+    role: CSAM
+    stage: 5
+    expected: [stage-5-review/SKILL.md]
+    not_expected:
+      - pipeline-hygiene-triage/SKILL.md
+      - se-execution-check/SKILL.md
+
+  - id: csam-expansion-signal
+    query: "Are there expansion signals we should pursue for this account?"
+    role: CSAM
+    stage: 5
+    expected: [stage-5-review/SKILL.md]
+    not_expected:
+      - pipeline-qualification/SKILL.md
+      - architecture-review/SKILL.md
+
+  # ── SE scenarios ────────────────────────────────────────────────
+  - id: se-proof-plan
+    query: "Help me plan the technical proof for this opportunity"
+    role: SE
+    stage: 2
+    expected: [proof-plan-orchestration/SKILL.md]
+    not_expected:
+      - milestone-health-review/SKILL.md
+      - pipeline-qualification/SKILL.md
+
+  - id: se-task-hygiene
+    query: "Run the SE daily task check — any stale or orphaned CRM tasks?"
+    role: SE
+    stage: any
+    expected: [se-execution-check/SKILL.md]
+    not_expected:
+      - pipeline-hygiene-triage/SKILL.md
+      - commit-gate-enforcement/SKILL.md
+
+  # ── Specialist scenarios ────────────────────────────────────────
+  - id: spec-pipeline-qual
+    query: "Qualify this inbound customer signal for our pipeline"
+    role: Specialist
+    stage: 1-2
+    expected: [pipeline-qualification/SKILL.md]
+    not_expected:
+      - milestone-health-review/SKILL.md
+      - adoption-excellence-review/SKILL.md
+
+  - id: spec-pipeline-hygiene
+    query: "How's the pipeline hygiene across my deals?"
+    role: Specialist
+    stage: 2-3
+    expected: [pipeline-hygiene-triage/SKILL.md]
+    not_expected:
+      - architecture-feasibility-check/SKILL.md
+      - delivery-accountability-mapping/SKILL.md
+
+  - id: spec-risk-surfacing
+    query: "What risks should I flag for this opportunity?"
+    role: Specialist
+    stage: 1-2
+    expected: [risk-surfacing/SKILL.md]
+    not_expected:
+      - value-realization-pack/SKILL.md
+      - adoption-excellence-review/SKILL.md
+
+  # ── CSA scenarios ───────────────────────────────────────────────
+  - id: csa-commit-gate
+    query: "Are we ready to commit on this deal?"
+    role: CSA
+    stage: 3
+    expected: [commit-gate-enforcement/SKILL.md]
+    not_expected:
+      - pipeline-qualification/SKILL.md
+      - task-hygiene-flow/SKILL.md
+
+  - id: csa-arch-feasibility
+    query: "Can the proposed architecture actually be delivered?"
+    role: CSA
+    stage: 2-3
+    expected: [architecture-review/SKILL.md]
+    not_expected:
+      - pipeline-hygiene-triage/SKILL.md
+      - stage-5-review/SKILL.md
+
+  # ── Cross-role / utility scenarios ──────────────────────────────
+  - id: cross-handoff-readiness
+    query: "What needs to happen before we hand off to the delivery team?"
+    role: Specialist
+    stage: 3
+    expected: [handoff-readiness-validation/SKILL.md]
+    not_expected:
+      - stage-5-review/SKILL.md
+      - value-realization-pack/SKILL.md
+
+  - id: any-stage-identification
+    query: "Diagnose which MCEM stage this opportunity is actually in"
+    role: any
+    stage: any
+    expected: [mcem-diagnostics/SKILL.md]
+    not_expected:
+      - se-execution-check/SKILL.md
+      - delivery-accountability-mapping/SKILL.md
+
+  # ── Multi-skill queries (should trigger >1 skill) ──────────────
+  - id: multi-milestone-commit
+    query: "Review milestone health and check if we're ready to commit"
+    role: CSA
+    stage: 3-4
+    expected:
+      - milestone-health-review/SKILL.md
+      - commit-gate-enforcement/SKILL.md
+
+  - id: multi-risk-handoff
+    query: "Flag deal risks and check whether the STU-to-CSU handoff is ready"
+    role: Specialist
+    stage: 3
+    expected:
+      - risk-surfacing/SKILL.md
+      - handoff-readiness-validation/SKILL.md
+
+  # ── Negative queries (should trigger 0 skills) ─────────────────
+  - id: neg-weather
+    query: "What's the weather in Seattle today?"
+    role: any
+    stage: any
+    expected: []
+
+  - id: neg-lunch
+    query: "Where should we go for lunch?"
+    role: any
+    stage: any
+    expected: []
+
+  # ── Ambiguous / role-neutral queries ────────────────────────────
+  - id: ambig-deal-status
+    query: "Identify what stage this deal is in based on CRM state"
+    role: any
+    stage: any
+    expected: [mcem-diagnostics/SKILL.md]
+
+  - id: ambig-next-steps
+    query: "Check exit criteria to figure out next steps on this opportunity"
+    role: any
+    stage: any
+    expected: [exit-criteria-validation/SKILL.md]
+
+  # ── Adjacent skill confusion tests ─────────────────────────────
+  - id: confuse-arch-handoff-vs-feasibility
+    query: "Is the architecture ready for handoff to the delivery team?"
+    role: CSA
+    stage: 3
+    expected: [architecture-review/SKILL.md]
+    not_expected:
+      - architecture-review/SKILL.md
+
+  - id: confuse-delivery-vs-execution
+    query: "Who owns the delivery execution for this milestone?"
+    role: CSAM
+    stage: 4
+    expected: [delivery-accountability-mapping/SKILL.md]
+    not_expected:
+      - execution-monitoring/SKILL.md
+
+  - id: confuse-pipeline-qual-vs-exit
+    query: "Have the formal exit criteria been satisfied for this opportunity?"
+    role: Specialist
+    stage: 2
+    expected: [mcem-diagnostics/SKILL.md]
+    not_expected:
+      - pipeline-qualification/SKILL.md
+
+  # ── Keyword-absent / semantic queries ───────────────────────────
+  - id: semantic-adoption
+    query: "Customer isn't using the product we deployed — check adoption gaps"
+    role: CSAM
+    stage: 5
+    expected: [stage-5-review/SKILL.md]
+
+  - id: semantic-blocker
+    query: "Something is preventing Unified dispatch for go-live"
+    role: CSA
+    stage: 4
+    expected: [se-execution-check/SKILL.md]
+
+  - id: semantic-partner
+    query: "A partner is co-selling on this deal, what should we coordinate?"
+    role: Specialist
+    stage: 2
+    expected: [shared-patterns/SKILL.md]
+
+  # ── CSAM additional coverage ────────────────────────────────────
+  - id: csam-delivery-accountability
+    query: "Map out the RACI — who runs point vs who coordinates delivery?"
+    role: CSAM
+    stage: 4
+    expected: [delivery-accountability-mapping/SKILL.md]
+
+  - id: csam-adoption-review
+    query: "How's the adoption and usage tracking going?"
+    role: CSAM
+    stage: 5
+    expected: [adoption-excellence-review/SKILL.md]

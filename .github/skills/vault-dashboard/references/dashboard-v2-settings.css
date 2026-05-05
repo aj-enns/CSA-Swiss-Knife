@@ -1,0 +1,111 @@
+/* @settings
+
+name: Dashboard v2
+id: dashboard-v2
+settings:
+    -
+        id: dashboard-colors
+        title: Dashboard Colors
+        type: heading
+        level: 1
+        collapsed: false
+    -
+        id: color-green
+        title: On Track / Healthy
+        type: variable-themed-color
+        format: hex
+        default-light: '#00c853'
+        default-dark: '#00c853'
+    -
+        id: color-amber
+        title: At Risk / Warning
+        type: variable-themed-color
+        format: hex
+        default-light: '#ff9100'
+        default-dark: '#ff9100'
+    -
+        id: color-red
+        title: Blocked / Danger
+        type: variable-themed-color
+        format: hex
+        default-light: '#ff1744'
+        default-dark: '#ff1744'
+    -
+        id: color-crimson
+        title: Past Due / Critical
+        type: variable-themed-color
+        format: hex
+        default-light: '#d50000'
+        default-dark: '#d50000'
+    -
+        id: color-blue
+        title: Active / Info
+        type: variable-themed-color
+        format: hex
+        default-light: '#448aff'
+        default-dark: '#448aff'
+    -
+        id: color-purple
+        title: Accent / Meetings
+        type: variable-themed-color
+        format: hex
+        default-light: '#7c4dff'
+        default-dark: '#7c4dff'
+    -
+        id: color-orange
+        title: Stale / Needs Attention
+        type: variable-themed-color
+        format: hex
+        default-light: '#ff6d00'
+        default-dark: '#ff6d00'
+    -
+        id: dashboard-layout
+        title: Layout Settings
+        type: heading
+        level: 1
+        collapsed: false
+    -
+        id: dashboard-max-width
+        title: Dashboard Max Width
+        description: Maximum width of wide-page dashboards
+        type: variable-number-slider
+        default: 1200
+        min: 800
+        max: 1600
+        step: 50
+        format: px
+    -
+        id: dashboard-card-radius
+        title: Card Border Radius
+        type: variable-number-slider
+        default: 10
+        min: 0
+        max: 20
+        step: 2
+        format: px
+    -
+        id: dashboard-typography
+        title: Typography
+        type: heading
+        level: 1
+        collapsed: true
+    -
+        id: dashboard-kpi-size
+        title: KPI Number Size
+        type: variable-number-slider
+        default: 1.7
+        min: 1.2
+        max: 2.5
+        step: 0.1
+        format: em
+*/
+
+/* ── Style Settings Variable Bindings ── */
+.wide-page .markdown-preview-view {
+  max-width: var(--dashboard-max-width, 1200px);
+}
+
+.customer-card,
+.scorecard-section {
+  border-radius: var(--dashboard-card-radius, 10px);
+}

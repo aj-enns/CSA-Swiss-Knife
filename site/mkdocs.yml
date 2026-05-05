@@ -1,0 +1,167 @@
+site_name: MCAPS IQ
+site_description: "Talk to Copilot in plain English to manage your MSX pipeline — no coding required."
+site_url: https://microsoft.github.io/MCAPS-IQ/
+repo_url: https://github.com/microsoft/MCAPS-IQ
+repo_name: microsoft/MCAPS-IQ
+edit_uri: edit/main/site/docs/
+
+docs_dir: docs
+site_dir: build
+
+theme:
+  name: material
+  custom_dir: overrides
+  logo: assets/avatar.png
+  favicon: assets/avatar.png
+  icon:
+    repo: fontawesome/brands/github
+  palette:
+    - scheme: default
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+    - scheme: slate
+      primary: custom
+      accent: custom
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+  font:
+    text: Inter
+    code: JetBrains Mono
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.path
+    - navigation.top
+    - navigation.footer
+    - toc.follow
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - announce.dismiss
+
+plugins:
+  - search:
+      separator: '[\s\-\.]+'
+  - tags
+  - glightbox
+  - mermaid-zoom
+
+markdown_extensions:
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - tables
+  - toc:
+      permalink: true
+      toc_depth: 3
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - docs/includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/microsoft/MCAPS-IQ
+  generator: false
+  analytics:
+    provider: null
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mermaid-init.js
+
+nav:
+  - Home: index.md
+  - Getting Started:
+    - getting-started/index.md
+    - Verify Installation: getting-started/start-servers.md
+    - Your First Chat: getting-started/first-chat.md
+    - Choose Your Role: getting-started/choose-role.md
+    - Troubleshooting Setup: getting-started/troubleshooting.md
+  - Guided Experience:
+    - guided/index.md
+    - "Day 1: Hello MCAPS IQ": guided/day-1-hello.md
+    - "Day 2: Read Your Pipeline": guided/day-2-pipeline.md
+    - "Day 3: Multi-Skill Chains": guided/day-3-chains.md
+    - "Day 5: The Lightbulb Moment": guided/day-5-lightbulb.md
+  - Prompts & Skills:
+    - prompts/index.md
+    - All Prompts: prompts/slash-commands.md
+    - By Role: prompts/by-role.md
+    - Workflow Chains: prompts/multi-skill-chains.md
+    - Power BI Reports: prompts/powerbi.md
+  - How It Works:
+    - architecture/index.md
+    - System Overview: architecture/overview.md
+    - MCP Servers & Tools: architecture/mcp-servers.md
+    - Skills & Instructions: architecture/skills-instructions.md
+    - Skill Architecture: architecture/skill-architecture.md
+    - Context Optimization: architecture/context-optimization.md
+    - Safety & Write Operations: architecture/safety.md
+    - Threat Model: architecture/threat-model.md
+    - Evaluation Framework:
+      - architecture/eval/index.md
+      - Architecture: architecture/eval/architecture.md
+      - Design Spec: architecture/eval/design-spec.md
+      - Hardening: architecture/eval/hardening.md
+      - Regression & Test Data: architecture/eval/regression-data.md
+  - Integrations:
+    - integrations/index.md
+    - Obsidian Vault (OIL): integrations/obsidian.md
+    - Power BI: integrations/powerbi.md
+    - Copilot CLI: integrations/copilot-cli.md
+    - Dashboard: integrations/dashboard.md
+    - Squads (Experimental): integrations/squads.md
+  - Customization:
+    - customization/index.md
+    - Editing Instructions: customization/instructions.md
+    - Writing Skills: customization/skills.md
+    - Adding MCP Servers: customization/mcp-servers.md
+  - FAQ & Troubleshooting:
+    - faq/index.md
+    - Common Issues: faq/common-issues.md
+    - Error Reference: faq/errors.md
+  - Tags: tags.md

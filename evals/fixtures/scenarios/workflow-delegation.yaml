@@ -1,0 +1,402 @@
+# Workflow Delegation Test Scenarios
+# Tests: parent prompt → subagent delegation chains with account input variants.
+#
+# These scenarios verify that:
+#   1. Account resolution works with TPID, name, abbreviation, and combo inputs
+#   2. Parent prompts correctly delegate to subagents (pbi-analyst, m365-actions)
+#   3. Parallel execution happens when sections/lanes are independent
+#   4. CRM queries use vault-resolved canonical names (not raw input)
+#   5. M365 delegation is bounded (rate-limit awareness)
+#
+# Parent prompts under test:
+#   - account-review.prompt.md (orchestrates PBI + M365 + CRM + vault)
+#   - portfolio-prioritization.prompt.md (PBI + CRM + vault)
+#   - ghcp-activity-impact.prompt.md (vault + M365 + PBI)
+#   - morning-prep.prompt.md (M365 + CRM + vault)
+#   - connect-review.prompt.md (parallel lane CRM + M365 + vault + git)
+#
+# Priority: P0 = must work (blocks all downstream), P1 = should work, P2 = nice to have
+
+scenarios:
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 1: account-review — Section Selector + Delegation
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  # ── 1A: Seat Analysis (PBI only — no M365 hits) ──────────────────────────
+
+  - id: wf-account-review-seats-by-tpid
+    category: account-review
+    priority: P0
+    name: "Account Review — Seat Analysis by TPID"
+    userUtterance: "Run seat analysis for TPID 10427242"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedSkill: null  # prompt-driven, not skill-driven
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-ghcp-seats-analysis
+        reason: "Section 2 (Seat Analysis) delegates to pbi-analyst"
+    forbiddenDelegations:
+      - subagent: m365-actions
+        reason: "Seat analysis does not need M365"
+    expectedAccountResolution:
+      input: "10427242"
+      canonical_name: "Windstream Communications"
+      method: "TPID → vault query_notes → canonical name"
+    outputValidation:
+      requiredSections:
+        - "GHCP"
+        - "Seats"
+      format: table
+
+  - id: wf-account-review-seats-by-name
+    category: account-review
+    priority: P0
+    name: "Account Review — Seat Analysis by Name"
+    userUtterance: "Seat analysis for Windstream Communications"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-ghcp-seats-analysis
+    forbiddenDelegations:
+      - subagent: m365-actions
+    expectedAccountResolution:
+      input: "Windstream Communications"
+      canonical_name: "Windstream Communications"
+      method: "Exact name → vault search_vault → canonical name"
+
+  - id: wf-account-review-seats-by-abbrev
+    category: account-review
+    priority: P1
+    name: "Account Review — Seat Analysis by Abbreviation"
+    userUtterance: "Seat analysis for NIQ"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-ghcp-seats-analysis
+    expectedAccountResolution:
+      input: "NIQ"
+      canonical_name: "Nielsen Consumer LLC"
+      method: "Abbreviation → AccountReference.md parenthesized alias → canonical name"
+    failure_modes:
+      - "Agent uses search_vault('NIQ') → fuzzy matches wrong account"
+      - "Agent fails to strip (NIQ) suffix from AccountReference name"
+
+  - id: wf-account-review-seats-by-tpid-name-combo
+    category: account-review
+    priority: P1
+    name: "Account Review — Seat Analysis by TPID+Name"
+    userUtterance: "Run seat analysis for 638502 WBD"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+    expectedAccountResolution:
+      input: "638502 WBD"
+      canonical_name: "Warner Bros Discovery"
+      method: "TPID extracted (638502) → query_notes → canonical name; WBD is confirmation"
+
+  # ── 1B: Health Card (PBI + M365 + CRM — parallel lanes) ──────────────────
+
+  - id: wf-account-review-health-card-by-name
+    category: account-review
+    priority: P0
+    name: "Account Review — Health Card by Name"
+    userUtterance: "Health card for Warner Bros Discovery"
+    context:
+      role: CSA
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        reason: "Lane 1: PBI seat metrics"
+      - subagent: m365-actions
+        reason: "Lane 2: M365 engagement signals"
+    expectedParallelism:
+      - group: [pbi-analyst, m365-actions, crm-inline]
+        reason: "Three Health Card lanes are independent"
+    expectedAccountResolution:
+      input: "Warner Bros Discovery"
+      canonical_name: "Warner Bros Discovery"
+    outputValidation:
+      requiredSections:
+        - "Health"
+        - "Adoption"
+        - "Engagement"
+        - "Pipeline"
+
+  # ── 1C: Pipeline Only (CRM only — no PBI/M365 hits) ──────────────────────
+
+  - id: wf-account-review-pipeline-by-tpid
+    category: account-review
+    priority: P1
+    name: "Account Review — Pipeline Only by TPID"
+    userUtterance: "Pipeline deep dive for TPID 83827671"
+    context:
+      role: Specialist
+      mediums: [crm, vault]
+    expectedDelegations: []
+    forbiddenDelegations:
+      - subagent: pbi-analyst
+        reason: "Pipeline section uses CRM inline, not PBI"
+      - subagent: m365-actions
+        reason: "Pipeline section doesn't need M365"
+    expectedAccountResolution:
+      input: "83827671"
+      canonical_name: "Nielsen Consumer LLC"
+    expectedCalls:
+      - tool: "msx:list_opportunities"
+        paramsContains:
+          customerKeyword: "Nielsen"
+      - tool: "msx:get_milestones"
+        paramsContains:
+          customerKeyword: "Nielsen"
+    outputValidation:
+      requiredColumns:
+        - "Opp #"
+        - "Stage"
+
+  # ── 1D: Full Review (all sources — max parallelism) ───────────────────────
+
+  - id: wf-account-review-full-by-name
+    category: account-review
+    priority: P0
+    name: "Account Review — Full Review by Name"
+    userUtterance: "Full review for Windstream Communications"
+    context:
+      role: CSA
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-ghcp-seats-analysis
+        reason: "Section 2 supersedes Lane 1"
+      - subagent: m365-actions
+        reason: "Section 3: Engagement deep dive"
+    expectedParallelism:
+      - group: [pbi-analyst, m365-actions, crm-inline]
+        reason: "Section 5 launches all sections in parallel"
+    expectedAccountResolution:
+      input: "Windstream Communications"
+      canonical_name: "Windstream Communications"
+    outputValidation:
+      requiredSections:
+        - "Health Card"
+        - "Seat"
+        - "Engagement"
+        - "Pipeline"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 2: portfolio-prioritization — PBI + CRM + Vault (no M365)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: wf-portfolio-all-accounts
+    category: portfolio-prioritization
+    priority: P0
+    name: "Portfolio Prioritization — All Tracked Accounts"
+    userUtterance: "Prioritize my accounts — where should I focus for GHCP growth?"
+    context:
+      role: Specialist
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-ghcp-seats-analysis
+        reason: "Step 1: GHCP seat metrics via PBI"
+    forbiddenDelegations:
+      - subagent: m365-actions
+        reason: "Portfolio prioritization uses vault for engagement, not live M365"
+    expectedCalls:
+      - tool: "oil:get_vault_context"
+      - tool: "oil:search_vault"
+        paramsContains:
+          query: "AccountReference"
+    outputValidation:
+      requiredSections:
+        - "Tier"
+        - "Priority"
+        - "Whitespace"
+
+  - id: wf-portfolio-specific-accounts
+    category: portfolio-prioritization
+    priority: P1
+    name: "Portfolio Prioritization — Named Accounts"
+    userUtterance: "Rank Windstream, NIQ, and WBD for GHCP focus"
+    context:
+      role: Specialist
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+    expectedAccountResolution:
+      input: "Windstream, NIQ, and WBD"
+      canonical_names:
+        - "Windstream Communications"
+        - "Nielsen Consumer LLC"
+        - "Warner Bros Discovery"
+      method: "Mixed: name, abbreviation, abbreviation → AccountReference.md resolution"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 3: ghcp-activity-impact — Vault + M365 + PBI
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: wf-activity-impact-by-name
+    category: ghcp-activity-impact
+    priority: P0
+    name: "Activity Impact — Single Account by Name"
+    userUtterance: "Did my engagement with Windstream actually drive GHCP growth?"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        reason: "Step 3: before/after seat measurement"
+      - subagent: m365-actions
+        reason: "Step 2: validate discovered activities"
+    expectedParallelism:
+      - group: [vault-activity-discovery]
+        reason: "Step 1 must complete before Steps 2 & 3"
+      - group: [pbi-analyst, m365-actions]
+        reason: "Steps 2 and 3 can run in parallel after Step 1"
+    expectedAccountResolution:
+      input: "Windstream"
+      canonical_name: "Windstream Communications"
+
+  - id: wf-activity-impact-by-tpid
+    category: ghcp-activity-impact
+    priority: P1
+    name: "Activity Impact — by TPID"
+    userUtterance: "Show activity impact scoring for TPID 638502"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+      - subagent: m365-actions
+    expectedAccountResolution:
+      input: "638502"
+      canonical_name: "Warner Bros Discovery"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 4: morning-prep — M365 + CRM + Vault (M365-heavy)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: wf-morning-prep
+    category: morning-prep
+    priority: P0
+    name: "Morning Prep — All Meetings"
+    userUtterance: "Run morning prep for today"
+    context:
+      role: CSA
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: m365-actions
+        reason: "Step 1: Get today's calendar via ListCalendarView"
+    expectedCalls:
+      - tool: "oil:search_vault"
+        purpose: "Step 2: Match attendees to vault entities"
+      - tool: "msx:list_opportunities"
+        purpose: "Step 3: CRM context for linked meetings"
+    m365_budget: low  # Single calendar query, not broad search
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 5: connect-review — Parallel Lane Architecture
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: wf-connect-review-quarterly
+    category: connect-review
+    priority: P1
+    name: "Connect Review — Quarterly Compilation"
+    userUtterance: "Compile my Connect review evidence for this quarter"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: m365-actions
+        reason: "Lane B: M365 activity evidence"
+    expectedParallelism:
+      - group: [crm-lane, m365-lane, vault-lane]
+        reason: "Lane A (CRM) + Lane B (M365) + Lane C (vault) are independent"
+    outputValidation:
+      requiredSections:
+        - "Evidence"
+        - "Connect"
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 6: PBI Direct Delegation (child prompts — invoked by parents)
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: wf-pbi-cxobserve-by-tpid
+    category: pbi-direct
+    priority: P1
+    name: "CXObserve Account Review — by TPID"
+    userUtterance: "Show me the support health for TPID 10427242"
+    context:
+      role: CSAM
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-cxobserve-account-review
+    forbiddenDelegations:
+      - subagent: m365-actions
+    expectedAccountResolution:
+      input: "10427242"
+      canonical_name: "Windstream Communications"
+
+  - id: wf-pbi-azure-aio-by-name
+    category: pbi-direct
+    priority: P1
+    name: "Azure All-in-One Review — by Name"
+    userUtterance: "Azure portfolio review for Warner Bros Discovery"
+    context:
+      role: CSA
+      mediums: [crm, vault]
+    expectedDelegations:
+      - subagent: pbi-analyst
+        prompt: pbi-azure-all-in-one-review
+
+  # ═══════════════════════════════════════════════════════════════════════════
+  # Category 7: Edge Cases — Account Resolution Failures
+  # ═══════════════════════════════════════════════════════════════════════════
+
+  - id: wf-unknown-account
+    category: edge-case
+    priority: P1
+    name: "Unknown Account — Graceful Failure"
+    userUtterance: "Seat analysis for Acme Corp"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedBehavior: "Agent should report account not found in tracked portfolio"
+    forbiddenDelegations:
+      - subagent: pbi-analyst
+        reason: "Should not query PBI for unresolved accounts"
+
+  - id: wf-ambiguous-name
+    category: edge-case
+    priority: P2
+    name: "Ambiguous Name — Disambiguation Required"
+    userUtterance: "Account review for Warner"
+    context:
+      role: SE
+      mediums: [crm, vault]
+    expectedBehavior: "Agent should present disambiguation options if multiple matches"
+    expectedAccountResolution:
+      input: "Warner"
+      method: "Partial match → may match Warner Bros Discovery or Warner Music Group → present options"
+
+  - id: wf-uppercase-input
+    category: edge-case
+    priority: P1
+    name: "Uppercase Name — Case Normalization"
+    userUtterance: "FULL REVIEW FOR WINDSTREAM COMMUNICATIONS"
+    context:
+      role: CSA
+      mediums: [crm, vault]
+    expectedAccountResolution:
+      input: "WINDSTREAM COMMUNICATIONS"
+      canonical_name: "Windstream Communications"
+      method: "Case-insensitive match → canonical title-case name"

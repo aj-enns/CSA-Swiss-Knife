@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MCAPS IQ</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div id="app">
+    <header id="header">
+      <div class="header-left">
+        <div class="header-brand">
+          <h1 class="app-title">MCAPS IQ</h1>
+          <span class="app-subtitle">Mission Control</span>
+        </div>
+      </div>
+      <div class="header-right">
+        <span id="connection-badge" class="connection-badge badge-disconnected">
+          <span class="conn-dot"></span>
+          Disconnected
+        </span>
+        <div class="timer-chip">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 4.5V8l2.5 2"/></svg>
+          <span id="session-timer" class="session-timer">00:00:00</span>
+        </div>
+      </div>
+    </header>
+
+    <div id="attention-bar" class="attention-bar"></div>
+
+    <div id="app-body">
+      <nav id="left-nav" class="nav-expanded">
+        <div class="nav-header">
+          <button id="nav-toggle" class="icon-btn nav-toggle" title="Toggle navigation">
+            <svg width="14" height="14" viewBox="0 0 16 16" fill="currentColor"><path d="M2 3.5h12a.5.5 0 010 1H2a.5.5 0 010-1zm0 4h12a.5.5 0 010 1H2a.5.5 0 010-1zm0 4h12a.5.5 0 010 1H2a.5.5 0 010-1z"/></svg>
+          </button>
+        </div>
+        <div class="nav-items">
+          <a class="nav-item" href="#/home" data-route="home" title="Home">
+            <span class="nav-icon">🏠</span>
+            <span class="nav-label">Home</span>
+          </a>
+          <a class="nav-item" href="#/opportunities" data-route="opportunities" title="Opportunities">
+            <span class="nav-icon">📋</span>
+            <span class="nav-label">Opportunities</span>
+          </a>
+          <a class="nav-item" href="#/accounts" data-route="accounts" title="Accounts">
+            <span class="nav-icon">🏢</span>
+            <span class="nav-label">Accounts</span>
+          </a>
+          <a class="nav-item" href="#/skills" data-route="skills" title="Skills Explorer">
+            <span class="nav-icon">🔌</span>
+            <span class="nav-label">Skills Explorer</span>
+          </a>
+          <a class="nav-item" href="#/mcp-servers" data-route="mcp-servers" title="MCP Servers">
+            <span class="nav-icon">🖧</span>
+            <span class="nav-label">MCP Servers</span>
+          </a>
+          <a class="nav-item" href="#/mission-control" data-route="mission-control" title="Mission Control">
+            <span class="nav-icon">🎯</span>
+            <span class="nav-label">Mission Control</span>
+          </a>
+          <a class="nav-item" href="#/gantt" data-route="gantt" title="Timeline">
+            <span class="nav-icon">📅</span>
+            <span class="nav-label">Timeline</span>
+          </a>
+          <a class="nav-item" href="#/job2" data-route="job2" title="Job2 Tracker">
+            <span class="nav-icon">📊</span>
+            <span class="nav-label">Job2 Tracker</span>
+          </a>
+          <a class="nav-item" href="#/acr-quarter" data-route="acr-quarter" title="ACR by Quarter">
+            <span class="nav-icon">📈</span>
+            <span class="nav-label">ACR by Quarter</span>
+          </a>
+          <a class="nav-item" href="#/action-plan" data-route="action-plan" title="Action Plan Generator">
+            <span class="nav-icon">💡</span>
+            <span class="nav-label">Action Plans</span>
+          </a>
+          <a class="nav-item" href="#/schedules" data-route="schedules" title="Schedules">
+            <span class="nav-icon">⏰</span>
+            <span class="nav-label">Schedules</span>
+          </a>
+        </div>
+        <div class="nav-spacer"></div>
+        <div class="nav-bottom">
+          <a class="nav-item" href="#/settings" data-route="settings" title="Settings">
+            <span class="nav-icon">⚙️</span>
+            <span class="nav-label">Settings</span>
+          </a>
+        </div>
+      </nav>
+
+      <main id="view-container"></main>
+    </div>
+
+    <!-- Log Drawer (slide-up panel) -->
+    <div id="log-drawer" class="log-drawer log-drawer--closed">
+      <div class="log-drawer__header">
+        <span class="log-drawer__title">🪵 Activity Log</span>
+        <div class="log-drawer__controls">
+          <button id="log-clear-btn" class="log-drawer__btn">Clear</button>
+          <button id="log-close-btn" class="log-drawer__btn log-drawer__btn--close" title="Close log">✕</button>
+        </div>
+      </div>
+      <div id="log-entries" class="log-entries"></div>
+    </div>
+
+    <footer id="session-bar">
+      <div class="session-stats">
+        <div class="stat-chip">
+          <span class="label">Tools</span>
+          <span id="tool-count" class="value">0</span>
+        </div>
+        <div class="stat-chip stat-chip-error">
+          <span class="label">Errors</span>
+          <span id="error-count" class="value">0</span>
+        </div>
+        <button id="log-drawer-toggle" class="stat-chip stat-chip-log" title="Toggle Activity Log">
+          <span class="label">🪵 Logs</span>
+          <span id="log-unread-badge" class="value log-badge">0</span>
+        </button>
+      </div>
+      <div class="filter-group">
+        <label class="toggle-switch" for="filter-code">
+          <input type="checkbox" id="filter-code">
+          <span class="toggle-slider"></span>
+          <span class="toggle-label">Code</span>
+        </label>
+        <select id="filter-verbosity">
+          <option value="minimal">Minimal</option>
+          <option value="normal" selected>Normal</option>
+          <option value="detailed">Detailed</option>
+        </select>
+      </div>
+    </footer>
+  </div>
+
+  <script src="router.js"></script>
+  <script src="log-store.js"></script>
+  <script src="content-formatters.js"></script>
+  <script src="home-view.js"></script>
+  <script src="opportunities-view.js"></script>
+  <script src="accounts-view.js"></script>
+  <script src="skills-view.js"></script>
+  <script src="mcp-servers-view.js"></script>
+  <script src="schedules-view.js"></script>
+  <script src="mission-control-view.js"></script>
+  <script src="settings-view.js"></script>
+  <script src="gantt-view.js"></script>
+  <script src="job2-view.js"></script>
+  <script src="acr-quarter-view.js"></script>
+  <script src="action-plan-view.js"></script>
+  <script src="session-picker.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

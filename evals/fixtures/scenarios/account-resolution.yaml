@@ -1,0 +1,678 @@
+# Account Resolution Test Matrix
+# Tests: prompt Step 0A.4 — resolving user input to canonical vault customer name.
+#
+# Resolution logic under test:
+#   1. Parse input → TPID (numeric), name, or both
+#   2. TPID path: query_notes({ where: { tpid } }) → frontmatter match → canonical name
+#   3. TPID fallback: search_vault("TPID <value>") → content match
+#   4. Name path: search_vault("<name>") → fuzzy match → Customers/<Name>/ folder
+#   5. Disambiguation: multiple matches → present options, don't guess
+#   6. Final: get_customer_context({ customer: "<resolved_name>" })
+#
+# Priority: P0 = must work (blocks review), P1 = should work, P2 = nice to have
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Category 1: TPID Resolution
+# ═══════════════════════════════════════════════════════════════════════════════
+
+scenarios:
+
+  # ── 1A: Pure TPID with prefix ──────────────────────────────────────────────
+
+  - id: res-tpid-prefix-windstream
+    category: tpid-resolution
+    priority: P0
+    input: "tpid 10427242"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "10427242" } }
+        purpose: "frontmatter O(n) lookup"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+        purpose: "load full context with resolved name"
+    failure_modes:
+      - "Agent uses CRM list_accounts_by_tpid instead of vault query → gets sub-account name 'Windstream' instead of 'Windstream Communications'"
+      - "Agent skips query_notes and calls get_customer_context({ customer: '10427242' }) → customer-not-found"
+
+  - id: res-tpid-prefix-wbd
+    category: tpid-resolution
+    priority: P0
+    input: "tpid 638502"
+    expected_resolution:
+      canonical_name: "Warner Bros Discovery"
+      tpid: "638502"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "638502" } }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Warner Bros Discovery" }
+    failure_modes:
+      - "Returns 'WARNER BROS DISCOVERY (WBD)' with parenthetical — folder name mismatch"
+      - "Confuses with Warner Music Group if vault has multiple Warner entries"
+
+  - id: res-tpid-prefix-niq
+    category: tpid-resolution
+    priority: P0
+    input: "tpid 83827671"
+    expected_resolution:
+      canonical_name: "Nielsen Consumer LLC"
+      tpid: "83827671"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "83827671" } }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Nielsen Consumer LLC" }
+    failure_modes:
+      - "Agent uses AccountReference name 'NIELSEN CONSUMER LLC (NIQ)' verbatim as folder name → not found"
+      - "Returns 'NIQ' as customer name instead of full legal name"
+
+  # ── 1B: TPID without prefix ───────────────────────────────────────────────
+
+  - id: res-tpid-bare-numeric
+    category: tpid-resolution
+    priority: P1
+    input: "10427242"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "10427242" } }
+        purpose: "detect numeric-only input as TPID"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "Agent treats bare number as a milestone number or opp number instead of TPID"
+      - "Agent passes to search_vault as generic query — matches too many notes"
+
+  - id: res-tpid-bare-short
+    category: tpid-resolution
+    priority: P1
+    input: "638502"
+    expected_resolution:
+      canonical_name: "Warner Bros Discovery"
+      tpid: "638502"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "638502" } }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Warner Bros Discovery" }
+    failure_modes:
+      - "Short numeric value mistaken for opportunity ID or milestone number"
+
+  # ── 1C: TPID + name combo ─────────────────────────────────────────────────
+
+  - id: res-tpid-with-name
+    category: tpid-resolution
+    priority: P1
+    input: "10427242 WINDSTREAM COMMUNICATIONS"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "10427242" } }
+        purpose: "TPID takes precedence — name is confirmation only"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "Agent splits input incorrectly — passes '10427242 WINDSTREAM' as name"
+      - "Agent ignores TPID and does name-only search, missing exact match"
+
+  - id: res-tpid-with-name-reversed
+    category: tpid-resolution
+    priority: P2
+    input: "WINDSTREAM COMMUNICATIONS tpid 10427242"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "10427242" } }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "Agent treats 'tpid 10427242' as part of the customer name string"
+
+  # ── 1D: TPID fallback path ────────────────────────────────────────────────
+
+  - id: res-tpid-fallback-search
+    category: tpid-resolution
+    priority: P0
+    description: "When query_notes returns empty (TPID not in frontmatter), fall back to search_vault"
+    input: "tpid 999888"
+    mock_behavior:
+      query_notes_returns: []
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "999888" } }
+        returns: "empty"
+      - tool: "oil:search_vault"
+        args: { query: "TPID 999888" }
+        purpose: "content-match fallback"
+    failure_modes:
+      - "Agent stops at empty query_notes and reports 'account not found' without trying fallback"
+      - "Agent calls CRM instead of vault fallback"
+
+  # ── 1E: query_frontmatter fast path ────────────────────────────────────────
+
+  - id: res-tpid-frontmatter-index
+    category: tpid-resolution
+    priority: P2
+    description: "Agent uses O(1) query_frontmatter for TPID lookup instead of full query_notes scan"
+    input: "tpid 10427242"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:query_frontmatter"
+        args: { key: "tpid", value_fragment: "10427242" }
+        purpose: "O(1) index lookup — faster than query_notes"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "Agent always uses query_notes even when query_frontmatter is faster"
+    notes: "Either query_notes or query_frontmatter is acceptable; frontmatter index is preferred for perf"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Category 2: Exact Name Match
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  - id: res-name-exact-uppercase
+    category: exact-name
+    priority: P0
+    input: "WINDSTREAM COMMUNICATIONS"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "WINDSTREAM COMMUNICATIONS" }
+        purpose: "fuzzy match against Customers/ folder names"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "Case-sensitive match fails — vault folder is title-case, input is uppercase"
+      - "Agent passes uppercase name to get_customer_context → folder not found"
+
+  - id: res-name-exact-titlecase
+    category: exact-name
+    priority: P0
+    input: "Windstream Communications"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Windstream Communications" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "Minimal — direct match expected"
+
+  - id: res-name-exact-with-qualifier
+    category: exact-name
+    priority: P1
+    input: "NIELSEN CONSUMER LLC (NIQ)"
+    expected_resolution:
+      canonical_name: "Nielsen Consumer LLC"
+      tpid: "83827671"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "NIELSEN CONSUMER LLC (NIQ)" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Nielsen Consumer LLC" }
+    failure_modes:
+      - "Agent uses full AccountReference string including '(NIQ)' as folder name"
+      - "Parentheses break search query parsing"
+      - "Agent strips qualifier and loses disambiguation signal"
+
+  - id: res-name-exact-lowercase
+    category: exact-name
+    priority: P1
+    input: "windstream communications"
+    expected_resolution:
+      canonical_name: "Windstream Communications"
+      tpid: "10427242"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "windstream communications" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+    failure_modes:
+      - "search_vault is case-sensitive and returns no results"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Category 3: Partial / Abbreviated Names
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  - id: res-abbrev-niq
+    category: partial-name
+    priority: P0
+    input: "NIQ"
+    expected_resolution:
+      canonical_name: "Nielsen Consumer LLC"
+      tpid: "83827671"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "NIQ" }
+        purpose: "match against AccountReference aliases or parenthetical qualifiers"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Nielsen Consumer LLC" }
+    failure_modes:
+      - "Three-letter abbreviation matches too many notes — agent picks wrong one"
+      - "NIQ not in vault frontmatter aliases — search fails to surface customer file"
+      - "Agent tries TPID path for 'NIQ' because it doesn't pattern-match as name"
+
+  - id: res-abbrev-wbd
+    category: partial-name
+    priority: P0
+    input: "WBD"
+    expected_resolution:
+      canonical_name: "Warner Bros Discovery"
+      tpid: "638502"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "WBD" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Warner Bros Discovery" }
+    failure_modes:
+      - "WBD not indexed as alias — search returns zero results"
+      - "Agent doesn't check AccountReference.md for parenthetical abbreviations"
+
+  - id: res-partial-nielsen
+    category: partial-name
+    priority: P1
+    input: "NIELSEN"
+    expected_resolution:
+      canonical_name: "Nielsen Consumer LLC"
+      tpid: "83827671"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "NIELSEN" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Nielsen Consumer LLC" }
+    failure_modes:
+      - "Multiple 'Nielsen' entities in vault (NielsenIQ vs Nielsen Media)"
+      - "Partial match returns Nielsen subsidiary instead of parent"
+
+  - id: res-partial-warner
+    category: partial-name
+    priority: P1
+    input: "WARNER"
+    expected_resolution:
+      canonical_name: "Warner Bros Discovery"
+      tpid: "638502"
+      ambiguity: "Could match Warner Music Group — agent should disambiguate"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "WARNER" }
+      - tool: "oil:read_note"
+        args: { path: "AccountReference.md" }
+        purpose: "cross-ref against tracked accounts to disambiguate"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Warner Bros Discovery" }
+    failure_modes:
+      - "Agent picks first result without verifying against AccountReference"
+      - "If Warner Music Group also in vault, agent silently picks wrong one"
+    notes: "If ambiguous, agent SHOULD present options and ask"
+
+  - id: res-partial-nbc
+    category: partial-name
+    priority: P1
+    input: "NBC"
+    expected_resolution:
+      canonical_name: "Comcast"
+      tpid: "624606"
+      notes: "NBCUniversal is a sub-account under Comcast TPID"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "NBC" }
+      - tool: "oil:read_note"
+        args: { path: "AccountReference.md" }
+        purpose: "resolve NBC → Comcast parent TPID"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Comcast" }
+    failure_modes:
+      - "Agent creates separate context for 'NBCUniversal' instead of routing to Comcast parent"
+      - "Agent doesn't recognize NBC as a sub-entity of TPID 624606"
+
+  - id: res-partial-nbcu
+    category: partial-name
+    priority: P2
+    input: "NBCU"
+    expected_resolution:
+      canonical_name: "Comcast"
+      tpid: "624606"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "NBCU" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Comcast" }
+    failure_modes:
+      - "NBCU abbreviation not indexed — search returns nothing"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Category 4: Ambiguous Inputs
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  - id: res-ambig-warner
+    category: ambiguous
+    priority: P0
+    input: "WARNER"
+    description: "Could match Warner Bros Discovery or Warner Music Group"
+    expected_behavior: "Agent presents disambiguation options if multiple tracked accounts match"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "WARNER" }
+      - tool: "oil:read_note"
+        args: { path: "AccountReference.md" }
+        purpose: "check which Warner entities are tracked"
+    failure_modes:
+      - "Agent silently picks first search result without disambiguation"
+      - "Agent picks non-tracked account over tracked one"
+    assertion: "must_disambiguate_or_match_tracked_account"
+
+  - id: res-ambig-cox
+    category: ambiguous
+    priority: P1
+    input: "Cox"
+    expected_resolution:
+      canonical_name: "Cox Corporate Services, Inc."
+      tpid: "645812"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Cox" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Cox Corporate Services, Inc." }
+    failure_modes:
+      - "Agent matches 'Cox Automotive' or 'Cox Media' instead of corporate parent"
+      - "Comma in canonical name breaks get_customer_context parameter parsing"
+
+  - id: res-ambig-paramount
+    category: ambiguous
+    priority: P1
+    input: "Paramount"
+    expected_resolution:
+      canonical_name: "Paramount Skydance Corporation"
+      tpid: ~
+      notes: "AccountReference has 'Paramount Skydance Corporation (GHE)' — qualifier must be stripped for folder match"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Paramount" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Paramount Skydance Corporation" }
+    failure_modes:
+      - "Agent uses '(GHE)' qualifier as part of folder name"
+      - "'Paramount' matches old Paramount Global + new Paramount Skydance — disambiguation needed"
+
+  - id: res-ambig-relx-subsidiary
+    category: ambiguous
+    priority: P2
+    input: "Elsevier"
+    expected_resolution:
+      canonical_name: "RELX Group"
+      tpid: "655366"
+      notes: "Elsevier is a BU under RELX Group — should resolve to parent"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Elsevier" }
+      - tool: "oil:read_note"
+        args: { path: "AccountReference.md" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "RELX Group" }
+    failure_modes:
+      - "Agent creates separate context for Elsevier instead of routing to RELX parent"
+      - "RELX multi-BU structure not captured in vault — agent doesn't know relationship"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Category 5: Edge Cases
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  - id: res-edge-punctuation-ampersand
+    category: edge-case
+    priority: P1
+    input: "AT&T"
+    expected_resolution:
+      canonical_name: "AT&T"
+      tpid: ~
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "AT&T" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "AT&T" }
+    failure_modes:
+      - "Ampersand breaks URL encoding in MCP transport"
+      - "search_vault interprets & as boolean AND operator"
+      - "Vault folder name uses 'AT&T' vs 'ATT' vs 'AT and T'"
+
+  - id: res-edge-punctuation-comma
+    category: edge-case
+    priority: P1
+    input: "Cox Corporate Services, Inc."
+    expected_resolution:
+      canonical_name: "Cox Corporate Services, Inc."
+      tpid: "645812"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Cox Corporate Services, Inc." }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Cox Corporate Services, Inc." }
+    failure_modes:
+      - "Comma in name breaks JSON parameter parsing"
+      - "Period in 'Inc.' causes path resolution issues on Windows"
+      - "Vault folder name doesn't include comma/period — mismatch"
+
+  - id: res-edge-parentheses-niq
+    category: edge-case
+    priority: P1
+    input: "NIELSEN CONSUMER LLC (NIQ)"
+    expected_resolution:
+      canonical_name: "Nielsen Consumer LLC"
+      tpid: "83827671"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "NIELSEN CONSUMER LLC (NIQ)" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Nielsen Consumer LLC" }
+    failure_modes:
+      - "Parentheses interpreted as regex grouping in search"
+      - "Agent passes full string including (NIQ) as folder name"
+
+  - id: res-edge-parentheses-ghe
+    category: edge-case
+    priority: P2
+    input: "Paramount Skydance Corporation (GHE)"
+    expected_resolution:
+      canonical_name: "Paramount Skydance Corporation"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Paramount Skydance Corporation" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Paramount Skydance Corporation" }
+    failure_modes:
+      - "Agent includes '(GHE)' in get_customer_context customer param"
+
+  - id: res-edge-shared-tpid
+    category: edge-case
+    priority: P0
+    input: "tpid 624606"
+    expected_resolution:
+      canonical_name: "Comcast"
+      tpid: "624606"
+      notes: "TPID 624606 covers both Comcast and NBCUniversal News Group — agent must resolve to parent"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "624606" } }
+        purpose: "may return multiple notes — Comcast + NBCU"
+      - tool: "oil:get_customer_context"
+        args: { customer: "Comcast" }
+        purpose: "resolve to parent account"
+    failure_modes:
+      - "query_notes returns multiple results, agent picks NBCUniversal instead of Comcast parent"
+      - "Agent creates two separate reviews for same TPID"
+      - "Agent calls get_customer_context twice — once per sub-account"
+    assertion: "must_resolve_to_single_parent"
+
+  - id: res-edge-nonexistent-tpid
+    category: edge-case
+    priority: P0
+    input: "tpid 99999999"
+    expected_resolution:
+      canonical_name: null
+      tpid: "99999999"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "99999999" } }
+        returns: "empty"
+      - tool: "oil:search_vault"
+        args: { query: "TPID 99999999" }
+        returns: "empty"
+    expected_behavior: "Agent reports 'No account found for TPID 99999999' — does NOT hallucinate a customer"
+    failure_modes:
+      - "Agent hallucinates a customer name for the TPID"
+      - "Agent silently skips the account instead of reporting not-found"
+      - "Agent calls CRM as fallback and uses CRM sub-account name for vault ops"
+    assertion: "must_report_not_found"
+
+  - id: res-edge-nonexistent-name
+    category: edge-case
+    priority: P1
+    input: "MICROSOFT"
+    expected_resolution:
+      canonical_name: null
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "MICROSOFT" }
+    expected_behavior: "Agent reports that MICROSOFT is not a tracked account, or matches reference notes mentioning Microsoft (false positive). Should not proceed to get_customer_context."
+    failure_modes:
+      - "search_vault returns many irrelevant notes mentioning 'Microsoft' → agent picks a random customer"
+      - "Agent creates a review for Microsoft as if it were a customer account"
+    assertion: "must_not_proceed_with_false_match"
+
+  - id: res-edge-empty-input
+    category: edge-case
+    priority: P2
+    input: ""
+    expected_behavior: "Agent falls back to AccountReference.md roster — offers to review all tracked accounts"
+    expected_tool_chain:
+      - tool: "oil:read_note"
+        args: { path: "AccountReference.md" }
+    failure_modes:
+      - "Agent calls get_customer_context with empty string"
+      - "Agent hallucinates a customer name"
+
+  - id: res-edge-multi-account
+    category: edge-case
+    priority: P1
+    input: "Windstream and Warner Bros Discovery"
+    expected_resolution:
+      - canonical_name: "Windstream Communications"
+        tpid: "10427242"
+      - canonical_name: "Warner Bros Discovery"
+        tpid: "638502"
+    expected_tool_chain:
+      - tool: "oil:search_vault"
+        args: { query: "Windstream" }
+      - tool: "oil:search_vault"
+        args: { query: "Warner Bros Discovery" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Windstream Communications" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Warner Bros Discovery" }
+    failure_modes:
+      - "Agent only resolves first account, drops second"
+      - "Agent concatenates names into single search query"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Category 6: Vault-First Verification (Behavioral)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+  - id: res-vault-before-crm
+    category: vault-first
+    priority: P0
+    description: "Agent must use vault for name resolution, never CRM list_accounts_by_tpid"
+    input: "tpid 10427242"
+    expected_tool_chain:
+      - tool: "oil:query_notes"
+        args: { where: { tpid: "10427242" } }
+    forbidden_calls:
+      - tool: "msx:list_accounts_by_tpid"
+        reason: "CRM returns sub-account names that don't match vault folders"
+    failure_modes:
+      - "Agent calls CRM first, gets 'Windstream', passes to get_customer_context → folder not found"
+    assertion: "vault_tool_before_crm_tool"
+
+  - id: res-vault-freshness-after-patch
+    category: vault-first
+    priority: P1
+    description: "After vault data is patched (e.g. oil:patch_note), subsequent query_notes/search_vault returns updated data"
+    input: "tpid 10427242"
+    precondition: "patch_note was called on Windstream customer file in same session"
+    expected_behavior: "get_customer_context returns data including the patched content"
+    failure_modes:
+      - "Stale frontmatter index — query_notes returns pre-patch data"
+      - "search_vault uses cached index that hasn't been invalidated"
+    notes: "Tests invalidateFrontmatterIndex() behavior in retrieve.ts"
+
+  - id: res-vault-accountref-first
+    category: vault-first
+    priority: P0
+    description: "Agent reads AccountReference.md before resolving ambiguous names"
+    input: "Warner"
+    expected_tool_chain:
+      - tool: "oil:read_note"
+        args: { path: "AccountReference.md" }
+        purpose: "establish tracked account roster"
+      - tool: "oil:search_vault"
+        args: { query: "Warner" }
+      - tool: "oil:get_customer_context"
+        args: { customer: "Warner Bros Discovery" }
+    failure_modes:
+      - "Agent skips AccountReference and resolves to non-tracked Warner entity"
+    assertion: "accountref_read_before_ambiguous_resolution"
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Summary Matrix (for quick reference)
+# ═══════════════════════════════════════════════════════════════════════════════
+#
+# | ID                          | Cat         | Input                                  | Expected Name              | Pri | Key Risk                                    |
+# |-----------------------------|-------------|----------------------------------------|----------------------------|-----|---------------------------------------------|
+# | res-tpid-prefix-windstream  | tpid        | tpid 10427242                          | Windstream Communications  | P0  | CRM name ≠ vault folder                     |
+# | res-tpid-prefix-wbd         | tpid        | tpid 638502                            | Warner Bros Discovery      | P0  | Parenthetical qualifier in AccountRef       |
+# | res-tpid-prefix-niq         | tpid        | tpid 83827671                          | Nielsen Consumer LLC       | P0  | (NIQ) stripped for folder match             |
+# | res-tpid-bare-numeric       | tpid        | 10427242                               | Windstream Communications  | P1  | Bare number ≠ milestone/opp number          |
+# | res-tpid-bare-short         | tpid        | 638502                                 | Warner Bros Discovery      | P1  | Short number ambiguity                      |
+# | res-tpid-with-name          | tpid        | 10427242 WINDSTREAM COMMUNICATIONS     | Windstream Communications  | P1  | TPID must take precedence                   |
+# | res-tpid-with-name-reversed | tpid        | WINDSTREAM COMMUNICATIONS tpid 10427242| Windstream Communications  | P2  | Parse order                                 |
+# | res-tpid-fallback-search    | tpid        | tpid 999888                            | (fallback path)            | P0  | Must try search_vault after empty query     |
+# | res-tpid-frontmatter-index  | tpid        | tpid 10427242                          | Windstream Communications  | P2  | query_frontmatter preferred for perf        |
+# | res-name-exact-uppercase    | exact-name  | WINDSTREAM COMMUNICATIONS              | Windstream Communications  | P0  | Case normalization                          |
+# | res-name-exact-titlecase    | exact-name  | Windstream Communications              | Windstream Communications  | P0  | Direct match                                |
+# | res-name-exact-with-qual    | exact-name  | NIELSEN CONSUMER LLC (NIQ)             | Nielsen Consumer LLC       | P1  | Qualifier stripping                         |
+# | res-name-exact-lowercase    | exact-name  | windstream communications              | Windstream Communications  | P1  | Case insensitivity                          |
+# | res-abbrev-niq              | partial     | NIQ                                    | Nielsen Consumer LLC       | P0  | Abbreviation resolution                     |
+# | res-abbrev-wbd              | partial     | WBD                                    | Warner Bros Discovery      | P0  | Abbreviation resolution                     |
+# | res-partial-nielsen         | partial     | NIELSEN                                | Nielsen Consumer LLC       | P1  | Partial name match                          |
+# | res-partial-warner          | partial     | WARNER                                 | Warner Bros Discovery      | P1  | Multi-match disambiguation                  |
+# | res-partial-nbc             | partial     | NBC                                    | Comcast                    | P1  | Sub-account → parent routing                |
+# | res-partial-nbcu            | partial     | NBCU                                   | Comcast                    | P2  | Obscure abbreviation                        |
+# | res-ambig-warner            | ambiguous   | WARNER                                 | (disambiguate)             | P0  | Must not silently pick wrong entity         |
+# | res-ambig-cox               | ambiguous   | Cox                                    | Cox Corporate Services     | P1  | Comma in canonical name                     |
+# | res-ambig-paramount         | ambiguous   | Paramount                              | Paramount Skydance Corp    | P1  | Post-merger name change                     |
+# | res-ambig-relx-subsidiary   | ambiguous   | Elsevier                               | RELX Group                 | P2  | Subsidiary → parent routing                 |
+# | res-edge-ampersand          | edge        | AT&T                                   | AT&T                       | P1  | Ampersand in search/URL encoding            |
+# | res-edge-comma              | edge        | Cox Corporate Services, Inc.           | Cox Corporate Services     | P1  | Comma/period in path                        |
+# | res-edge-paren-niq          | edge        | NIELSEN CONSUMER LLC (NIQ)             | Nielsen Consumer LLC       | P1  | Parentheses in search                       |
+# | res-edge-paren-ghe          | edge        | Paramount Skydance Corporation (GHE)   | Paramount Skydance Corp    | P2  | Qualifier stripping                         |
+# | res-edge-shared-tpid        | edge        | tpid 624606                            | Comcast                    | P0  | Multi-entity TPID → parent                  |
+# | res-edge-nonexistent-tpid   | edge        | tpid 99999999                          | null                       | P0  | Must not hallucinate                        |
+# | res-edge-nonexistent-name   | edge        | MICROSOFT                              | null                       | P1  | Must not false-match                        |
+# | res-edge-empty              | edge        | (empty)                                | (roster fallback)          | P2  | Graceful empty-input handling               |
+# | res-edge-multi-account      | edge        | Windstream and Warner Bros Discovery   | [both resolved]            | P1  | Multi-account parsing                       |
+# | res-vault-before-crm        | vault-first | tpid 10427242                          | Windstream Communications  | P0  | CRM forbidden for name resolution           |
+# | res-vault-freshness         | vault-first | tpid 10427242                          | Windstream Communications  | P1  | Index invalidation after patch              |
+# | res-vault-accountref-first  | vault-first | Warner                                 | Warner Bros Discovery      | P0  | AccountReference roster gates disambiguation|

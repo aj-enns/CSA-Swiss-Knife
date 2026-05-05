@@ -1,0 +1,1351 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCAPS IQ — Overview Diagram</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f5f5f5;
+    color: #1b1b1b;
+  }
+  .page {
+    width: 100%;
+    max-width: 1680px;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 2px 24px rgba(0,0,0,.08);
+  }
+
+  /* ── Color tokens ─────────────────────────────────── */
+  :root {
+    --ms-blue: #0078D4;
+    --ms-blue-light: #D0E8FF;
+    --teal: #00B7C3;
+    --teal-light: #D4F5F7;
+    --green: #107C10;
+    --green-light: #DFF6DD;
+    --amber: #FFB900;
+    --amber-light: #FFF4CE;
+    --purple: #5C2D91;
+    --purple-light: #EDE0F7;
+    --red: #D13438;
+    --red-light: #FDE7E9;
+    --gray: #737373;
+    --gray-light: #E6E6E6;
+    --charcoal: #1B1B1B;
+  }
+
+  /* ── Section 1: Value Banner ──────────────────────── */
+  .value-banner {
+    background: linear-gradient(135deg, var(--ms-blue) 0%, #005a9e 40%, var(--teal) 100%);
+    color: #fff;
+    padding: 36px 48px 32px;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  .value-banner h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .value-banner .subtitle {
+    font-size: 1.05rem;
+    opacity: 0.85;
+    margin-top: 0;
+  }
+  .pillars {
+    display: flex;
+    gap: 32px;
+  }
+  .pillar {
+    flex: 1;
+    background: rgba(255,255,255,.12);
+    border-radius: 12px;
+    padding: 20px 24px;
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    backdrop-filter: blur(4px);
+  }
+  .pillar-icon {
+    font-size: 2rem;
+    line-height: 1;
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255,255,255,.18);
+    border-radius: 10px;
+  }
+  .pillar h3 { font-size: 1.05rem; font-weight: 600; margin-bottom: 4px; }
+  .pillar p { font-size: 0.88rem; opacity: 0.9; line-height: 1.4; }
+  .trust-badge {
+    align-self: flex-end;
+    font-size: 0.78rem;
+    opacity: 0.7;
+    border: 1px solid rgba(255,255,255,.3);
+    border-radius: 6px;
+    padding: 6px 14px;
+    margin-top: -8px;
+  }
+  .trust-badge svg { vertical-align: -2px; margin-right: 4px; }
+
+  /* ── Section 2: Prompt Bridge ─────────────────────── */
+  .prompt-bridge {
+    background: #fafafa;
+    border-bottom: 1px solid var(--gray-light);
+    padding: 28px 48px 18px;
+  }
+  .prompt-bridge-label {
+    text-align: center;
+    font-size: 0.82rem;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    font-weight: 600;
+    margin-bottom: 16px;
+  }
+  .prompt-row {
+    display: flex;
+    justify-content: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+  .prompt-bubble {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: #fff;
+    border: 1.5px solid var(--ms-blue);
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 0.88rem;
+    color: var(--charcoal);
+    position: relative;
+    box-shadow: 0 2px 6px rgba(0,120,212,.1);
+  }
+  .prompt-bubble .avatar {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--ms-blue);
+    display: flex; align-items: center; justify-content: center;
+    color: #fff; font-size: 0.65rem; font-weight: 700;
+    flex-shrink: 0;
+  }
+  .prompt-bubble .arrow-down {
+    position: absolute;
+    bottom: -22px;
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: 1.1rem;
+  }
+  .prompt-bubble:nth-child(1) .arrow-down { color: var(--teal); }
+  .prompt-bubble:nth-child(2) .arrow-down { color: var(--green); }
+  .prompt-bubble:nth-child(3) .arrow-down { color: var(--ms-blue); }
+  .prompt-bubble:nth-child(4) .arrow-down { color: var(--purple); }
+  .prompt-bubble:nth-child(5) .arrow-down { color: var(--amber); }
+
+  /* ── Shared flow layout ───────────────────────────── */
+  .flows-container {
+    padding: 32px 24px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .swim-lane {
+    display: flex;
+    gap: 0;
+    position: relative;
+  }
+  .lane-label {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 0.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 16px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px 0 0 8px;
+    min-width: 38px;
+    color: #fff;
+  }
+  .lane-content {
+    flex: 1;
+    padding: 16px 20px;
+    border: 1.5px solid;
+    border-left: none;
+    border-radius: 0 10px 10px 0;
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  /* Lane A — Daily/Weekly (teal) */
+  .lane-a .lane-label { background: var(--teal); }
+  .lane-a .lane-content { border-color: var(--teal); background: var(--teal-light); }
+
+  /* Lane B — On-Demand (blue) */
+  .lane-b .lane-label { background: var(--ms-blue); }
+  .lane-b .lane-content { border-color: var(--ms-blue); background: var(--ms-blue-light); }
+
+  /* Lane C — Safety (amber/red) */
+  .lane-c .lane-label { background: var(--amber); color: var(--charcoal); }
+  .lane-c .lane-content { border-color: var(--amber); background: var(--amber-light); }
+
+  /* ── Flow cards ───────────────────────────────────── */
+  .flow-card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px 18px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.07);
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+  }
+  .flow-card h4 {
+    font-size: 0.92rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .flow-card h4 .tag {
+    font-size: 0.68rem;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 4px;
+    color: #fff;
+  }
+  .flow-step {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 0.82rem;
+  }
+  .flow-step .step-box {
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+    flex-shrink: 0;
+  }
+  .step-arrow { color: var(--gray); font-size: 1rem; flex-shrink: 0; }
+  .source-crm { background: var(--ms-blue-light); color: var(--ms-blue); border: 1px solid var(--ms-blue); }
+  .source-m365 { background: var(--teal-light); color: #008b94; border: 1px solid var(--teal); }
+  .source-vault { background: var(--green-light); color: var(--green); border: 1px solid var(--green); }
+  .source-pbi { background: var(--purple-light); color: var(--purple); border: 1px solid var(--purple); }
+  .output-box {
+    background: #f0f0f0;
+    border: 1.5px dashed var(--gray);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.8rem;
+    color: var(--charcoal);
+    line-height: 1.4;
+  }
+  .output-box strong { color: var(--ms-blue); }
+  .callout-chip {
+    font-size: 0.72rem;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+  }
+  .chip-green { background: var(--green-light); color: var(--green); }
+  .chip-amber { background: var(--amber-light); color: #946200; }
+
+  /* ── Section 3: Daily & Weekly ────────────────────── */
+  .flow-card.morning { flex: 1; min-width: 440px; }
+  .flow-card.weekly { flex: 1; min-width: 440px; }
+
+  .parallel-sources {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+
+  /* ── Enhanced source tiles (Morning Brief) ────────── */
+  .source-tile {
+    flex: 1;
+    min-width: 130px;
+    background: #fff;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    transition: transform .15s, box-shadow .15s;
+  }
+  .source-tile:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0,0,0,.1);
+  }
+  .source-tile .tile-bar {
+    height: 5px;
+    width: 100%;
+  }
+  .source-tile .tile-body {
+    padding: 14px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .source-tile .tile-icon {
+    width: 38px; height: 38px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.25rem;
+    color: #fff;
+  }
+  .source-tile .tile-title {
+    font-size: 0.85rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .source-tile .tile-sub {
+    font-size: 0.7rem;
+    color: var(--gray);
+    line-height: 1.3;
+  }
+  .source-tile.st-m365 .tile-bar { background: var(--teal); }
+  .source-tile.st-m365 .tile-icon { background: var(--teal); }
+  .source-tile.st-m365 .tile-title { color: #008b94; }
+  .source-tile.st-vault .tile-bar { background: var(--green); }
+  .source-tile.st-vault .tile-icon { background: var(--green); }
+  .source-tile.st-vault .tile-title { color: var(--green); }
+  .source-tile.st-crm .tile-bar { background: var(--ms-blue); }
+  .source-tile.st-crm .tile-icon { background: var(--ms-blue); }
+  .source-tile.st-crm .tile-title { color: var(--ms-blue); }
+  .convergence-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 2px 0;
+    position: relative;
+  }
+  .convergence-arrow .ca-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--teal), var(--green), var(--ms-blue));
+    border-radius: 1px;
+  }
+  .convergence-arrow .ca-label {
+    background: #fff;
+    border: 1.5px solid var(--gray-light);
+    border-radius: 16px;
+    padding: 4px 14px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gray);
+    white-space: nowrap;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .convergence-arrow .ca-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+  .mode-cols {
+    display: flex;
+    gap: 12px;
+  }
+  .mode-col {
+    flex: 1;
+    background: #f7f7f7;
+    border-radius: 6px;
+    padding: 10px 12px;
+    font-size: 0.78rem;
+    line-height: 1.45;
+  }
+  .mode-col h5 {
+    font-size: 0.82rem;
+    margin-bottom: 6px;
+    font-weight: 700;
+  }
+
+  /* ── Section 4: On-Demand ─────────────────────────── */
+  .flow-card.on-demand { flex: 1; min-width: 200px; }
+  .section-grid {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    font-size: 0.72rem;
+  }
+  .section-pill {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    white-space: nowrap;
+  }
+  .tier-list {
+    display: flex;
+    gap: 4px;
+    flex-wrap: wrap;
+    font-size: 0.7rem;
+  }
+  .tier {
+    padding: 2px 7px;
+    border-radius: 3px;
+    font-weight: 600;
+  }
+
+  /* ── Section 5: Safety ────────────────────────────── */
+  .safety-grid {
+    display: flex;
+    gap: 20px;
+    flex: 1;
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .stage-panel {
+    flex: 1;
+    border-radius: 10px;
+    padding: 18px 20px;
+  }
+  .stage-panel h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    margin-bottom: 10px;
+  }
+  .stage-1 {
+    background: var(--green-light);
+    border: 2px solid var(--green);
+  }
+  .stage-1 h4 { color: var(--green); }
+  .stage-2 {
+    background: var(--amber-light);
+    border: 2px solid var(--amber);
+  }
+  .stage-2 h4 { color: #946200; }
+  .safety-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .safety-list li {
+    font-size: 0.82rem;
+    display: flex;
+    gap: 6px;
+    align-items: flex-start;
+    line-height: 1.35;
+  }
+  .safety-list li .icon { flex-shrink: 0; }
+  .stage-arrow-col {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 60px;
+    font-size: 1.6rem;
+    color: var(--gray);
+    flex-direction: column;
+    gap: 4px;
+  }
+  .stage-arrow-col span.note {
+    font-size: 0.65rem;
+    text-align: center;
+    line-height: 1.2;
+    color: var(--gray);
+    font-weight: 600;
+  }
+  .safety-callouts {
+    display: flex;
+    gap: 12px;
+    width: 100%;
+    margin-top: 4px;
+    flex-wrap: wrap;
+  }
+  .safety-callout {
+    flex: 1;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    line-height: 1.35;
+    font-weight: 500;
+    display: flex;
+    gap: 8px;
+    align-items: flex-start;
+  }
+  .safety-callout.green-c { background: var(--green-light); border-left: 3px solid var(--green); }
+  .safety-callout.amber-c { background: var(--amber-light); border-left: 3px solid var(--amber); }
+  .safety-callout.red-c { background: var(--red-light); border-left: 3px solid var(--red); }
+
+  /* ── Section 6: Data Sources ──────────────────────── */
+  .data-sources {
+    background: var(--charcoal);
+    color: #fff;
+    padding: 28px 48px 24px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 20px;
+  }
+  .data-sources h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.6;
+    font-weight: 600;
+  }
+  .sources-row {
+    display: flex;
+    gap: 24px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .source-card {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.15);
+    border-radius: 12px;
+    padding: 18px 22px;
+    text-align: center;
+    min-width: 170px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    transition: background .2s;
+  }
+  .source-card:hover { background: rgba(255,255,255,.14); }
+  .source-card .src-icon {
+    font-size: 2rem;
+    width: 52px; height: 52px;
+    display: flex; align-items: center; justify-content: center;
+    border-radius: 12px;
+  }
+  .source-card h4 { font-size: 0.9rem; font-weight: 700; }
+  .source-card p { font-size: 0.72rem; opacity: 0.6; line-height: 1.35; }
+  .src-crm .src-icon { background: var(--ms-blue); }
+  .src-m365 .src-icon { background: var(--teal); }
+  .src-vault .src-icon { background: var(--green); }
+  .src-pbi .src-icon { background: var(--purple); }
+  .src-gh .src-icon { background: #333; border: 1px solid #555; }
+  .hub-connector {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    color: rgba(255,255,255,.4);
+    font-size: 0.75rem;
+  }
+  .hub-connector .line {
+    width: 2px; height: 18px;
+    background: rgba(255,255,255,.25);
+  }
+  .hub-box {
+    background: rgba(255,255,255,.1);
+    border: 1.5px solid rgba(255,255,255,.25);
+    border-radius: 12px;
+    padding: 14px 32px;
+    text-align: center;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hub-box .hub-icon {
+    font-size: 2.2rem;
+  }
+  .hub-stats {
+    display: flex;
+    gap: 20px;
+    font-size: 0.78rem;
+    opacity: 0.8;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .hub-stats span { display: flex; flex-direction: column; align-items: center; }
+  .hub-stats .num { font-size: 1.3rem; font-weight: 700; opacity: 1; color: var(--teal); }
+
+  /* ── Section 7: Role Ribbon ───────────────────────── */
+  .role-ribbon {
+    background: #fafafa;
+    border-top: 1px solid var(--gray-light);
+    padding: 24px 48px 28px;
+  }
+  .role-ribbon h3 {
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    color: var(--gray);
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 18px;
+  }
+  .roles-row {
+    display: flex;
+    gap: 18px;
+    justify-content: center;
+    flex-wrap: wrap;
+  }
+  .role-card {
+    flex: 0 1 calc(25% - 18px);
+    max-width: 260px;
+    min-width: 200px;
+    background: #fff;
+    border-radius: 12px;
+    border: 1.5px solid var(--gray-light);
+    padding: 18px 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    box-shadow: 0 1px 4px rgba(0,0,0,.05);
+  }
+  .role-card .role-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .role-card .role-icon {
+    width: 42px; height: 42px;
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .role-card h4 { font-size: 0.95rem; font-weight: 700; }
+  .role-card .role-sub { font-size: 0.72rem; color: var(--gray); }
+  .role-workflows {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    font-size: 0.78rem;
+  }
+  .role-workflows li {
+    list-style: none;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .role-workflows li::before {
+    content: '▸';
+    color: var(--ms-blue);
+    font-weight: 700;
+  }
+  .role-prompt {
+    background: #f0f5ff;
+    border: 1px solid var(--ms-blue-light);
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 0.75rem;
+    font-style: italic;
+    color: #555;
+    line-height: 1.35;
+  }
+  .role-prompt::before {
+    content: '"';
+    color: var(--ms-blue);
+    font-weight: 700;
+    font-size: 1rem;
+    font-style: normal;
+    margin-right: 2px;
+  }
+  .role-prompt::after {
+    content: '"';
+    color: var(--ms-blue);
+    font-weight: 700;
+    font-size: 1rem;
+    font-style: normal;
+    margin-left: 2px;
+  }
+
+  /* ── Callout boxes ────────────────────────────────── */
+  .callouts-strip {
+    display: flex;
+    gap: 16px;
+    padding: 20px 48px;
+    background: #fff;
+    border-top: 1px solid var(--gray-light);
+    flex-wrap: wrap;
+  }
+  .callout-box {
+    flex: 1;
+    border-radius: 10px;
+    padding: 16px 18px;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+  .callout-box .callout-num {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.72rem; font-weight: 700;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .callout-box h5 {
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .callout-box p { font-size: 0.76rem; line-height: 1.45; color: #444; }
+  .cb-1 { background: var(--ms-blue-light); }
+  .cb-1 .callout-num { background: var(--ms-blue); }
+  .cb-1 h5 { color: var(--ms-blue); }
+  .cb-2 { background: var(--red-light); }
+  .cb-2 .callout-num { background: var(--red); }
+  .cb-2 h5 { color: var(--red); }
+  .cb-3 { background: var(--purple-light); }
+  .cb-3 .callout-num { background: var(--purple); }
+  .cb-3 h5 { color: var(--purple); }
+  .cb-4 { background: var(--green-light); }
+  .cb-4 .callout-num { background: var(--green); }
+  .cb-4 h5 { color: var(--green); }
+
+  /* ── Spacing helpers ──────────────────────────────── */
+  .lane-gap { height: 2px; }
+  .flex-col { display: flex; flex-direction: column; gap: 10px; }
+  .w-full { width: 100%; }
+
+  /* ── Footer ───────────────────────────────────────── */
+  .footer-note {
+    text-align: center;
+    padding: 14px 48px;
+    font-size: 0.72rem;
+    color: var(--gray);
+    background: #fafafa;
+    border-top: 1px solid var(--gray-light);
+  }
+
+  /* ── Responsive ────────────────────────────────────── */
+  @media (max-width: 1200px) {
+    .value-banner { padding: 28px 24px 24px; }
+    .pillars { gap: 16px; }
+    .pillar { padding: 14px 16px; }
+    .prompt-bridge { padding: 20px 24px 14px; }
+    .flows-container { padding: 24px 12px 8px; }
+    .data-sources { padding: 24px 24px 20px; }
+    .role-ribbon { padding: 20px 24px 24px; }
+    .callouts-strip { padding: 16px 24px; }
+    .footer-note { padding: 12px 24px; }
+    .flow-card.morning { min-width: 320px; }
+    .flow-card.weekly { min-width: 320px; }
+    .source-card { min-width: 140px; padding: 14px 16px; }
+  }
+
+  @media (max-width: 900px) {
+    html { font-size: 13px; }
+    .value-banner { padding: 20px 16px 18px; }
+    .pillars { flex-direction: column; gap: 12px; }
+    .prompt-bridge { padding: 16px 16px 12px; }
+    .prompt-row { gap: 10px; }
+    .prompt-bubble { padding: 6px 12px; font-size: 0.82rem; }
+    .prompt-bubble .arrow-down { display: none; }
+    .flows-container { padding: 16px 8px 6px; }
+    .lane-label { font-size: 0.7rem; min-width: 28px; padding: 12px 6px; }
+    .lane-content { padding: 12px 12px; gap: 14px; }
+    .flow-card.morning { min-width: 0; }
+    .flow-card.weekly { min-width: 0; }
+    .flow-card.on-demand { min-width: 180px; }
+    .mode-cols { flex-direction: column; gap: 8px; }
+    .safety-grid { flex-direction: column; }
+    .stage-arrow-col {
+      flex-direction: row;
+      width: 100%;
+      height: auto;
+      font-size: 1.2rem;
+      justify-content: center;
+    }
+    .stage-arrow-col span.note { display: none; }
+    .stage-panel { min-width: 0; }
+    .callouts-strip { padding: 14px 16px; gap: 12px; }
+    .callout-box { flex: 1 1 calc(50% - 12px); min-width: 200px; }
+    .data-sources { padding: 20px 16px 16px; }
+    .source-card { min-width: 120px; padding: 12px 14px; }
+    .role-ribbon { padding: 18px 16px 20px; }
+    .role-card { flex: 0 1 calc(50% - 18px); min-width: 180px; }
+    .footer-note { padding: 10px 16px; }
+  }
+
+  @media (max-width: 600px) {
+    html { font-size: 12px; }
+    .value-banner { padding: 16px 12px 14px; gap: 14px; }
+    .value-banner h1 { font-size: 1.6rem; }
+    .pillar { padding: 12px; gap: 10px; }
+    .pillar-icon { width: 36px; height: 36px; font-size: 1.4rem; }
+    .prompt-bridge { padding: 12px 12px 10px; }
+    .prompt-row { gap: 8px; }
+    .prompt-bubble { font-size: 0.76rem; padding: 5px 10px; }
+    .flows-container { padding: 12px 4px 4px; }
+    .lane-label { display: none; }
+    .lane-content { border-left: 1.5px solid; border-radius: 10px; padding: 10px; gap: 10px; }
+    .source-tile { min-width: 100px; }
+    .source-tile .tile-body { padding: 10px; }
+    .source-tile .tile-sub { display: none; }
+    .callouts-strip { flex-direction: column; padding: 12px; }
+    .callout-box { flex: 1 1 100%; }
+    .sources-row { gap: 12px; }
+    .source-card { min-width: 100px; padding: 10px 12px; }
+    .source-card p { display: none; }
+    .hub-box { padding: 10px 16px; gap: 10px; }
+    .role-card { flex: 1 1 100%; max-width: none; }
+    .role-ribbon { padding: 14px 12px 16px; }
+    .footer-note { padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 1 — VALUE BANNER
+     ════════════════════════════════════════════════════ -->
+<section class="value-banner">
+  <div>
+    <h1>MCAPS IQ</h1>
+    <p class="subtitle">Talk to Copilot in plain English to run your pipeline — no coding required.</p>
+  </div>
+  <div class="pillars">
+    <div class="pillar">
+      <div class="pillar-icon">⏱</div>
+      <div>
+        <h3>Save Time</h3>
+        <p>Eliminate MSX screen-hopping. Pipeline, milestones, tasks, meeting prep — all in one chat window.</p>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-icon">⚡</div>
+      <div>
+        <h3>Stay Sharp</h3>
+        <p>AI surfaces risks, stale deals, and missed follow-ups you'd otherwise miss. Proactive, not reactive.</p>
+      </div>
+    </div>
+    <div class="pillar">
+      <div class="pillar-icon">👥</div>
+      <div>
+        <h3>Work Together</h3>
+        <p>Cross-role context flows automatically — handoffs, coverage gaps, and relationship health are visible across the team.</p>
+      </div>
+    </div>
+  </div>
+  <div class="trust-badge">
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+    Read-only by default · Always asks before writing · Every output is a draft for your judgment
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 2 — PROMPT BRIDGE
+     ════════════════════════════════════════════════════ -->
+<section class="prompt-bridge">
+  <div class="prompt-bridge-label">What You Say → What Happens</div>
+  <div class="prompt-row">
+    <div class="prompt-bubble">
+      <div class="avatar">JL</div>
+      "Start my day"
+      <span class="arrow-down">▼</span>
+    </div>
+    <div class="prompt-bubble">
+      <div class="avatar">JL</div>
+      "Run my weekly pipeline review"
+      <span class="arrow-down">▼</span>
+    </div>
+    <div class="prompt-bubble">
+      <div class="avatar">JL</div>
+      "Run a full account review for Contoso"
+      <span class="arrow-down">▼</span>
+    </div>
+    <div class="prompt-bubble">
+      <div class="avatar">JL</div>
+      "How am I doing? SE productivity"
+      <span class="arrow-down">▼</span>
+    </div>
+    <div class="prompt-bubble">
+      <div class="avatar">JL</div>
+      "Update the close date on the Contoso opp"
+      <span class="arrow-down">▼</span>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     FLOW LANES
+     ════════════════════════════════════════════════════ -->
+<div class="flows-container">
+
+<!-- ── LANE A: Daily & Weekly Rhythm ─────────────────── -->
+<div class="swim-lane lane-a">
+  <div class="lane-label">A &nbsp;·&nbsp; Daily &amp; Weekly Rhythm</div>
+  <div class="lane-content">
+
+    <!-- Morning Brief -->
+    <div class="flow-card morning">
+      <h4>
+        Morning Brief
+        <span class="tag" style="background:var(--teal)">/daily</span>
+        <span class="tag" style="background:var(--teal)">/morning-prep</span>
+      </h4>
+
+      <!-- Enhanced source tiles -->
+      <div class="parallel-sources" style="gap:12px;">
+        <div class="source-tile st-m365">
+          <div class="tile-bar"></div>
+          <div class="tile-body">
+            <div class="tile-icon">📅</div>
+            <div class="tile-title">Calendar</div>
+            <div class="tile-sub">Today's meetings, attendees,<br>time conflicts &amp; declined events</div>
+          </div>
+        </div>
+        <div class="source-tile st-vault">
+          <div class="tile-bar"></div>
+          <div class="tile-body">
+            <div class="tile-icon">📓</div>
+            <div class="tile-title">Customer Context</div>
+            <div class="tile-sub">Account notes, prior meetings,<br>open action items &amp; people</div>
+          </div>
+        </div>
+        <div class="source-tile st-crm">
+          <div class="tile-bar"></div>
+          <div class="tile-body">
+            <div class="tile-icon">📊</div>
+            <div class="tile-title">Pipeline State</div>
+            <div class="tile-sub">Active opps, milestone health,<br>overdue tasks &amp; deal team</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Convergence arrow -->
+      <div class="convergence-arrow">
+        <div class="ca-dot" style="background:var(--teal);"></div>
+        <div class="ca-line"></div>
+        <div class="ca-label">⚡ Queried in parallel</div>
+        <div class="ca-line"></div>
+        <div class="ca-dot" style="background:var(--ms-blue);"></div>
+      </div>
+
+      <!-- Output -->
+      <div class="output-box" style="border:1.5px solid var(--teal);border-style:solid;background:linear-gradient(135deg,#f0fafa,#f5f9ff);">
+        <strong style="color:var(--charcoal);">🎯 Role-Aware Prioritized Action List</strong><br>
+        <span style="font-size:0.78rem;">
+        Specialist → pipeline flags &nbsp;│&nbsp; SE → task hygiene &nbsp;│&nbsp; CSAM → governance items
+        </span><br>
+        <span style="font-size:0.75rem;color:var(--gray);">+ Auto-generated meeting prep notes with pre-populated vault context</span>
+      </div>
+
+      <div style="display:flex;gap:6px;flex-wrap:wrap;">
+        <span class="callout-chip chip-green">✓ Meeting notes created</span>
+        <span class="callout-chip chip-green">✓ Top 3 actions surfaced</span>
+        <span class="callout-chip chip-amber">⚠ Risks flagged</span>
+      </div>
+    </div>
+
+    <!-- Weekly Review -->
+    <div class="flow-card weekly">
+      <h4>
+        Weekly Review
+        <span class="tag" style="background:var(--teal)">/weekly</span>
+      </h4>
+      <div style="font-size:0.78rem;color:var(--gray);margin-bottom:4px;">Auto-detects day of week — no mode selection needed</div>
+      <div class="mode-cols">
+        <div class="mode-col" style="border-left:3px solid var(--ms-blue);">
+          <h5 style="color:var(--ms-blue);">🟦 Monday — Governance Prep</h5>
+          Vault sweep → role-specific skill chains → status + internal actions → vault write-back<br><br>
+          <strong>Output:</strong> Shareable governance status (customer-safe + internal remediation queue)
+        </div>
+        <div class="mode-col" style="border-left:3px solid var(--green);">
+          <h5 style="color:var(--green);">🟩 Friday — Retrospective Digest</h5>
+          Meeting aggregation → M365 gap fill → CRM health check → formatted digest<br><br>
+          <strong>Output:</strong> Saved to vault <code>Weekly/</code> folder — what happened, risks carried forward
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="lane-gap"></div>
+
+<!-- ── LANE B: On-Demand Analysis ────────────────────── -->
+<div class="swim-lane lane-b">
+  <div class="lane-label">B &nbsp;·&nbsp; On-Demand Analysis</div>
+  <div class="lane-content">
+
+    <!-- Account Review -->
+    <div class="flow-card on-demand" style="min-width:300px;">
+      <h4>
+        Account Review
+        <span class="tag" style="background:var(--ms-blue)">/account-review</span>
+      </h4>
+      <div style="font-size:0.75rem;color:var(--gray);margin-bottom:2px;">Pick sections or run Full Review:</div>
+      <div class="section-grid">
+        <span class="section-pill" style="background:var(--purple-light);color:var(--purple);">Health Card</span>
+        <span class="section-pill" style="background:var(--purple-light);color:var(--purple);">Seat Analysis</span>
+        <span class="section-pill" style="background:var(--teal-light);color:#008b94;">Engagement</span>
+        <span class="section-pill" style="background:var(--ms-blue-light);color:var(--ms-blue);">Pipeline</span>
+        <span class="section-pill" style="background:var(--charcoal);color:#fff;">Full Review</span>
+      </div>
+      <div class="parallel-sources" style="margin-top:4px;">
+        <div class="step-box source-pbi" style="font-size:0.7rem;">PBI MSXI</div>
+        <div class="step-box source-pbi" style="font-size:0.7rem;">OctoDash</div>
+        <div class="step-box source-m365" style="font-size:0.7rem;">M365</div>
+        <div class="step-box source-crm" style="font-size:0.7rem;">CRM</div>
+      </div>
+      <div class="output-box" style="font-size:0.75rem;">
+        <strong>Scored health dashboard</strong> with risk indicators, seat whitespace, engagement velocity
+      </div>
+    </div>
+
+    <!-- Portfolio Prioritization -->
+    <div class="flow-card on-demand">
+      <h4>
+        Portfolio Rank
+        <span class="tag" style="background:var(--ms-blue)">/portfolio-prioritization</span>
+      </h4>
+      <div style="font-size:0.75rem;color:var(--gray);margin-bottom:4px;">All tracked accounts scored → 5-tier classification:</div>
+      <div class="tier-list">
+        <span class="tier" style="background:#e8f5e9;color:#2e7d32;">Greenfield</span>
+        <span class="tier" style="background:#fff3e0;color:#e65100;">Stagnant</span>
+        <span class="tier" style="background:var(--ms-blue-light);color:var(--ms-blue);">Whitespace</span>
+        <span class="tier" style="background:var(--green-light);color:var(--green);">High Perf</span>
+        <span class="tier" style="background:var(--red-light);color:var(--red);">Low Util</span>
+      </div>
+      <div class="parallel-sources" style="margin-top:6px;">
+        <div class="step-box source-pbi" style="font-size:0.7rem;">PBI Seats</div>
+        <div class="step-box source-crm" style="font-size:0.7rem;">CRM Pipe</div>
+        <div class="step-box source-vault" style="font-size:0.7rem;">Vault</div>
+      </div>
+      <div class="output-box" style="font-size:0.75rem;"><strong>Ranked action list</strong> — where to spend time for max GHCP growth</div>
+    </div>
+
+    <!-- What Next -->
+    <div class="flow-card on-demand" style="min-width:200px;">
+      <h4>
+        What Next?
+        <span class="tag" style="background:var(--ms-blue)">/what-next</span>
+      </h4>
+      <div style="font-size:0.75rem;color:var(--gray);">"I have a few minutes"</div>
+      <div style="text-align:center;font-size:0.9rem;color:var(--gray);">▼</div>
+      <div style="font-size:0.78rem;">Quick role-specific scan of pipeline + milestones</div>
+      <div class="output-box" style="font-size:0.75rem;">
+        <strong>Top 3 actions</strong> ranked by urgency<br>
+        Each offers: <em>"Want me to do this?"</em>
+      </div>
+    </div>
+
+    <!-- Meeting Lifecycle -->
+    <div class="flow-card on-demand" style="min-width:260px;">
+      <h4>
+        Meetings
+        <span class="tag" style="background:var(--ms-blue)">/meeting</span>
+      </h4>
+      <div style="font-size:0.75rem;color:var(--gray);">Auto-detects mode from input:</div>
+      <div class="mode-cols" style="margin-top:4px;">
+        <div class="mode-col" style="border-left:3px solid var(--ms-blue);padding:8px 10px;">
+          <h5 style="font-size:0.75rem;color:var(--ms-blue);">Prep Mode</h5>
+          Meeting title →<br>Vault + CRM + M365<br>→ Pre-filled note
+        </div>
+        <div class="mode-col" style="border-left:3px solid var(--green);padding:8px 10px;">
+          <h5 style="font-size:0.75rem;color:var(--green);">Process Mode</h5>
+          Pasted notes →<br>Structure + actions<br>→ Updated vault
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="lane-gap"></div>
+
+<!-- ── LANE C: Staged Write & Safety ─────────────────── -->
+<div class="swim-lane lane-c">
+  <div class="lane-label">C &nbsp;·&nbsp; Write Safety</div>
+  <div class="lane-content" style="flex-direction:column;">
+
+    <div class="safety-grid">
+      <!-- Stage 1 -->
+      <div class="stage-panel stage-1">
+        <h4>🟢 Stage 1 — Read &amp; Draft (Always Safe)</h4>
+        <ul class="safety-list">
+          <li><span class="icon">📖</span> CRM Read — opportunities, milestones, tasks, deal teams</li>
+          <li><span class="icon">📧</span> M365 Read — email, Teams, calendar, transcripts</li>
+          <li><span class="icon">📓</span> Vault Read — customer notes, meeting history, people</li>
+          <li><span class="icon">📊</span> PBI Read — seats, ACR, consumption, pipeline metrics</li>
+          <li><span class="icon">🤖</span> AI Synthesis — cross-reference sources → draft output (Markdown)</li>
+        </ul>
+        <div style="margin-top:10px;padding:8px 12px;background:rgba(16,124,16,.1);border-radius:6px;font-size:0.78rem;font-weight:600;color:var(--green);text-align:center;">
+          ✅ No CRM writes. AI cannot modify records in Stage 1.<br>
+          This is the normal operating mode. Most workflows never leave Stage 1.
+        </div>
+      </div>
+
+      <!-- Arrow -->
+      <div class="stage-arrow-col">
+        <span style="font-size:2.2rem;">→</span>
+        <span class="note">Human<br>triggers<br>Stage 2</span>
+      </div>
+
+      <!-- Stage 2 -->
+      <div class="stage-panel stage-2">
+        <h4>🟡 Stage 2 — Review &amp; Execute (Human-Gated)</h4>
+        <ul class="safety-list">
+          <li><span class="icon">👁️</span> Human reviews staged changes — sees diff of what will change</li>
+          <li><span class="icon">✏️</span> Human can edit progress text, task fields, next steps before applying</li>
+          <li><span class="icon">✅</span> <strong>"Execute all"</strong> — applies approved changes to CRM</li>
+          <li><span class="icon">❌</span> <strong>"Cancel all"</strong> — discards all staged changes, no writes</li>
+          <li><span class="icon">🔒</span> Role-gated — you can only modify what MSX allows for your role</li>
+          <li><span class="icon">📝</span> Execution log (.json) saved for full traceability</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="safety-callouts">
+      <div class="safety-callout green-c">
+        <strong style="white-space:nowrap;">Read-Only Default</strong>
+        Stage 1 is read-only against all systems. This is where 90% of interactions live.
+      </div>
+      <div class="safety-callout amber-c">
+        <strong style="white-space:nowrap;">Human-in-the-Loop</strong>
+        Stage 2 requires explicit approval. No silent writes. No auto-execution.
+      </div>
+      <div class="safety-callout red-c">
+        <strong style="white-space:nowrap;">Role-Gated</strong>
+        Write permissions match your MSX role. You can only update what you'd update manually.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</div><!-- /flows-container -->
+
+<!-- ════════════════════════════════════════════════════
+     CALLOUT BOXES
+     ════════════════════════════════════════════════════ -->
+<section class="callouts-strip">
+  <div class="callout-box cb-1">
+    <h5><span class="callout-num">1</span> Why Plain English?</h5>
+    <p>No SQL, no DAX, no OData. You describe what you need; the agent picks the right tools, queries the right systems, and assembles the answer. <strong>43 skills</strong> activate automatically by matching your words to their capabilities.</p>
+  </div>
+  <div class="callout-box cb-2">
+    <h5><span class="callout-num">2</span> Safety &amp; Trust</h5>
+    <p>Stage 1 is read-only against all systems. Stage 2 writes require explicit human approval. Role-gated: you can only modify what MSX would let you modify manually. Every staged change shows a diff.</p>
+  </div>
+  <div class="callout-box cb-3">
+    <h5><span class="callout-num">3</span> Multi-Signal Intelligence</h5>
+    <p>Most MSX answers come from one system. MCAPS IQ cross-references <strong>2+ sources</strong> (CRM + M365, CRM + Vault, PBI + CRM) and flags when sources disagree or go silent.</p>
+  </div>
+  <div class="callout-box cb-4">
+    <h5><span class="callout-num">4</span> Your Knowledge Compounds</h5>
+    <p>The Obsidian vault stores meeting notes, customer context, and relationship history locally. Every meeting prep and action item feeds back — so the agent gets <strong>smarter about your accounts</strong> over time.</p>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 6 — DATA SOURCES
+     ════════════════════════════════════════════════════ -->
+<section class="data-sources">
+  <h3>Connected Systems</h3>
+  <div class="sources-row">
+    <div class="source-card src-crm">
+      <div class="src-icon">🏢</div>
+      <h4>MSX / CRM</h4>
+      <p>Opportunities · Milestones<br>Tasks · Deal Teams</p>
+    </div>
+    <div class="source-card src-m365">
+      <div class="src-icon">📧</div>
+      <h4>Microsoft 365</h4>
+      <p>Outlook · Teams · Calendar<br>Transcripts · SharePoint</p>
+    </div>
+    <div class="source-card src-vault">
+      <div class="src-icon">📓</div>
+      <h4>Obsidian Vault</h4>
+      <p>Customer Notes · People<br>Meeting History · Projects</p>
+    </div>
+    <div class="source-card src-pbi">
+      <div class="src-icon">📊</div>
+      <h4>Power BI</h4>
+      <p>MSXI · OctoDash · Azure AIO<br>SE Productivity · CXObserve</p>
+    </div>
+    <div class="source-card src-gh">
+      <div class="src-icon">🐙</div>
+      <h4>GitHub</h4>
+      <p>Repo Activity · PRs<br>Issues · Documentation</p>
+    </div>
+  </div>
+  <div class="hub-connector">
+    <div class="line"></div>
+    ▼
+  </div>
+  <div class="hub-box">
+    <div class="hub-icon">🤖</div>
+    <div>
+      <div style="font-size:1.1rem;font-weight:700;">GitHub Copilot — VS Code Chat</div>
+      <div class="hub-stats">
+        <span><span class="num">43</span>skills</span>
+        <span><span class="num">20+</span>slash prompts</span>
+        <span><span class="num">8</span>MCAPS roles</span>
+        <span><span class="num">5</span>data sources</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 7 — ROLE RIBBON
+     ════════════════════════════════════════════════════ -->
+<section class="role-ribbon">
+  <h3>Find Your Role</h3>
+  <div class="roles-row">
+    <!-- Specialist -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:var(--ms-blue);">🎯</div>
+        <div>
+          <h4>Specialist</h4>
+          <div class="role-sub">Pipeline builder &amp; deal driver</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Pipeline hygiene &amp; forecast prep</li>
+        <li>Deal qualification &amp; BANT scoring</li>
+        <li>STU→CSU handoff readiness</li>
+      </ul>
+      <div class="role-prompt">It's Monday — run my weekly pipeline review. What needs cleanup across my Stage 2 and 3 opps?</div>
+    </div>
+    <!-- SE -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:var(--teal);">🔧</div>
+        <div>
+          <h4>Solution Engineer</h4>
+          <div class="role-sub">Technical proof executor &amp; HoK driver</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Task hygiene &amp; SE daily check</li>
+        <li>POC / Pilot / Demo scoping</li>
+        <li>HoK readiness &amp; SE productivity</li>
+      </ul>
+      <div class="role-prompt">Run my daily task hygiene check — any stale tasks or missing owners on my active milestones?</div>
+    </div>
+    <!-- CSA -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:var(--purple);">🏗️</div>
+        <div>
+          <h4>Cloud Solution Architect</h4>
+          <div class="role-sub">Architecture &amp; execution owner</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Architecture feasibility review</li>
+        <li>Execution sweep &amp; guardrails</li>
+        <li>Delivery handoff artifacts</li>
+      </ul>
+      <div class="role-prompt">The proof is complete. Create a handoff note summarizing architecture decisions and next actions.</div>
+    </div>
+    <!-- CSAM -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:var(--green);">🤝</div>
+        <div>
+          <h4>CSAM</h4>
+          <div class="role-sub">Customer-success orchestrator</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Milestone governance &amp; commit gates</li>
+        <li>Customer outcome definition</li>
+        <li>Adoption tracking &amp; Stage 5 review</li>
+      </ul>
+      <div class="role-prompt">We're entering Realize Value for Northwind. Are our committed milestones tracking measurable outcomes?</div>
+    </div>
+    <!-- AE -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:#E8590C;">💼</div>
+        <div>
+          <h4>Account Executive</h4>
+          <div class="role-sub">Customer relationship owner &amp; strategic orchestrator</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Account planning &amp; customer growth</li>
+        <li>Pipeline precision &amp; MACC execution</li>
+        <li>Cross-team account leadership</li>
+      </ul>
+      <div class="role-prompt">Run a full account review for Contoso — seats, engagement, and pipeline. Where are we exposed?</div>
+    </div>
+    <!-- ATS -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:#0E566C;">🧭</div>
+        <div>
+          <h4>Account Technology Strategist</h4>
+          <div class="role-sub">AI &amp; Security strategy leader</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Customer technology strategy &amp; AI alignment</li>
+        <li>Technical team orchestration</li>
+        <li>Consumption growth through adoption</li>
+      </ul>
+      <div class="role-prompt">What's the full account landscape for Fabrikam? Show me cross-role pipeline and EDE coverage.</div>
+    </div>
+    <!-- IA -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:#C4820E;">🏭</div>
+        <div>
+          <h4>Industry Advisor</h4>
+          <div class="role-sub">Industry-focused pipeline creator</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Industry use case specialization</li>
+        <li>Proactive Stage 1 pipeline creation</li>
+        <li>Industry partner sales &amp; co-innovation</li>
+      </ul>
+      <div class="role-prompt">What industry hero use cases can we land at Woodgrove? Show me AI Halo opportunities and partner ISVs.</div>
+    </div>
+    <!-- ATU Sales Director -->
+    <div class="role-card">
+      <div class="role-header">
+        <div class="role-icon" style="background:#8B5CF6;">👔</div>
+        <div>
+          <h4>ATU Sales Director</h4>
+          <div class="role-sub">Sales leader &amp; coaching orchestrator</div>
+        </div>
+      </div>
+      <ul class="role-workflows">
+        <li>Pipeline governance &amp; coverage</li>
+        <li>Team coaching &amp; MACC budget</li>
+        <li>Red Carpet compliance &amp; account coaching</li>
+      </ul>
+      <div class="role-prompt">Rank my team's accounts by GHCP growth potential — where should we focus this quarter?</div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     FOOTER
+     ════════════════════════════════════════════════════ -->
+<div class="footer-note">
+  MCAPS IQ — AI-Powered Sales Operations for MCAPS Account Teams &nbsp;·&nbsp; Agentic AI can make mistakes. You are responsible for reviewing and validating every action. &nbsp;·&nbsp; github.com/Microsoft/MCAPS-IQ
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "mcaps-iq",
+  "description": "AI-powered sales operations toolkit for MCAPS account teams — MSX CRM tools, Power BI analytics, and 40+ workflow skills for GitHub Copilot.",
+  "version": "0.3.2",
+  "author": {
+    "name": "MCAPS-IQ Contributors"
+  },
+  "homepage": "https://github.com/microsoft/MCAPS-IQ",
+  "repository": "https://github.com/microsoft/MCAPS-IQ.git",
+  "license": "MIT",
+  "keywords": ["mcp", "msx", "dataverse", "dynamics365", "crm", "copilot", "mcaps", "sales"],
+  "category": "sales-tools",
+  "skills": ".github/skills/",
+  "agents": ".github/agents/",
+  "mcpServers": ".mcp.json",
+  "extension": ".github/extensions/mcaps-iq-dashboard/extension.mjs"
+}

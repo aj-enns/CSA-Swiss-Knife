@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+#
+# pre-push hook — run lightweight integrity checks before push.
+#
+
+REPO_ROOT="$(git rev-parse --show-toplevel)"
+VERIFY_SCRIPT="$REPO_ROOT/scripts/verify-instructions.js"
+
+# ── Instruction file integrity check (RC-3) ────────────────
+if [[ -x "$(command -v node)" ]] && [[ -f "$VERIFY_SCRIPT" ]]; then
+  node "$VERIFY_SCRIPT" --verify
+  VERIFY_EXIT=$?
+  if [[ $VERIFY_EXIT -eq 1 ]]; then
+    echo ""
+    echo "⚠️  Instruction/skill files changed since last baseline."
+    echo "   If intentional, run: node scripts/verify-instructions.js --generate"
+    echo "   Then commit the updated checksums before pushing."
+    # Warning only — does not block push
+  fi
+fi
+
+exit 0

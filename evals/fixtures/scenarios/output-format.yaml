@@ -1,0 +1,53 @@
+# Output Format Evaluation Scenarios
+# Tests: does the agent produce output matching the expected structure?
+
+scenarios:
+  - id: morning-brief-format
+    skill: morning-brief
+    description: "Morning brief must include priority sections and meeting list"
+    output_schema:
+      required_sections:
+        - "Pipeline"
+        - "Milestones"
+        - "Meetings"
+      format: mixed
+
+  - id: milestone-table-format
+    skill: milestone-health-review
+    description: "Milestone output must be a table with required columns"
+    output_schema:
+      required_columns:
+        - "Name"
+        - "Monthly Use"
+        - "Due Date"
+        - "Status"
+        - "Owner"
+      format: table
+
+  - id: opportunity-table-format
+    skill: pipeline-hygiene-triage
+    description: "Opportunity output must be a table with required columns"
+    output_schema:
+      required_columns:
+        - "Opp #"
+        - "Name"
+        - "Stage"
+        - "Estimated Close Date"
+      format: table
+
+  - id: risk-surfacing-format
+    skill: risk-surfacing
+    description: "Risk surfacing must include evidence and role assignment"
+    output_schema:
+      required_sections:
+        - "Risk"
+      forbidden_patterns:
+        - "^(?!.*evidence).*risk.*$"  # risk without evidence
+
+  - id: vault-context-format
+    skill: vault-context-assembly
+    description: "Vault context must surface customer notes"
+    output_schema:
+      required_sections:
+        - "Customer"
+        - "Notes"

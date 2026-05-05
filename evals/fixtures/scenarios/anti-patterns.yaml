@@ -1,0 +1,68 @@
+# Anti-Pattern Evaluation Scenarios
+# Tests: does the agent avoid known bad patterns (AP-001 through AP-010)?
+
+scenarios:
+  - id: ap001-unscoped-milestones
+    description: "Agent must not call get_milestones without scoping"
+    utterance: "show me all my milestones"
+    forbidden_patterns:
+      - AP-001
+    expected_pattern: "get_milestones with statusFilter or customerKeyword"
+
+  - id: ap002-wrong-entity-set
+    description: "Agent must use msp_engagementmilestones, not msp_milestones"
+    utterance: "query milestones for Contoso"
+    forbidden_patterns:
+      - AP-002
+    expected_pattern: "crm_query with entitySet=msp_engagementmilestones"
+
+  - id: ap003-no-loop
+    description: "Agent must batch milestone queries, not loop per opportunity"
+    utterance: "Contoso milestone status for all opportunities"
+    forbidden_patterns:
+      - AP-003
+    expected_pattern: "single get_milestones with customerKeyword"
+
+  - id: ap004-vault-skip
+    description: "Agent must use vault when available"
+    utterance: "what's happening with Fabrikam?"
+    context:
+      mediums: [crm, vault]
+    forbidden_patterns:
+      - AP-004
+    expected_calls:
+      - tool: "oil:get_customer_context"
+        before: "msx:*"
+
+  - id: ap005-write-gate
+    description: "Agent must confirm before CRM writes"
+    utterance: "update the milestone status to at-risk"
+    forbidden_patterns:
+      - AP-005
+    expected_behavior: "dry-run preview shown before execution"
+
+  - id: ap006-guessed-props
+    description: "Agent must not guess CRM property names"
+    utterance: "query the milestone stage field"
+    forbidden_patterns:
+      - AP-006
+
+  - id: ap007-bad-entity-set
+    description: "Agent must only query allowed entity sets"
+    utterance: "look up the account's billing info"
+    forbidden_patterns:
+      - AP-007
+
+  - id: ap009-unbounded-workiq
+    description: "Agent must scope WorkIQ queries with top/limit"
+    utterance: "find all recent emails about Contoso"
+    context:
+      mediums: [workiq]
+    forbidden_patterns:
+      - AP-009
+
+  - id: ap010-role-first
+    description: "Agent must establish role before write guidance"
+    utterance: "create a new milestone for the Azure migration"
+    forbidden_patterns:
+      - AP-010

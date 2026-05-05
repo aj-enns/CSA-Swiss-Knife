@@ -1,0 +1,72 @@
+name: Lint Copilot Context
+
+on:
+  pull_request:
+    paths:
+      - '.github/skills/**'
+      - '.github/instructions/**'
+      - '.github/copilot-instructions.md'
+      - '.github/eval/**'
+  push:
+    branches: [main]
+    paths:
+      - '.github/skills/**'
+      - '.github/instructions/**'
+      - '.github/copilot-instructions.md'
+      - '.github/eval/**'
+
+permissions:
+  contents: read
+
+defaults:
+  run:
+    working-directory: .github/eval
+
+jobs:
+  lint:
+    name: Context Health
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # full history for cross-branch comparison
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: .github/eval/package-lock.json
+
+      - run: npm ci
+
+      # ── Tier 1: fast lint gates (no model download) ──
+      - name: Lint skill descriptions
+        run: node lint-descriptions.mjs
+
+      - name: Lint instruction descriptions
+        run: node lint-instructions.mjs --cross
+
+      - name: Context health & token budget
+        run: node lint-context.mjs
+
+      # ── Tier 2: embedding-based gates (downloads model ~23MB) ──
+      - name: Confusion matrix check
+        run: node confusion-matrix.mjs --ci
+        env:
+          MAX_CONFUSION_PAIRS: 30  # role-card family creates intentional similarity clusters
+
+      - name: Routing regression check
+        if: github.event_name == 'pull_request'
+        run: node score-cross-branch.mjs --source origin/main --target HEAD --ci
+
+      - name: Context health (JSON artifact)
+        if: always()
+        run: node lint-context.mjs --json > context-report.json 2>/dev/null || true
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: context-health-report
+          path: .github/eval/context-report.json
+          retention-days: 30

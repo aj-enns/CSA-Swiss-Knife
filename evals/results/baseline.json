@@ -1,0 +1,100 @@
+{
+  "timestamp": "2026-03-16T23:49:11.981Z",
+  "commit": "bc4912c",
+  "branch": "feat/mcp-tests-packaging",
+  "phase": "offline",
+  "model": null,
+  "summary": {
+    "overallScore": 0.9285714285714286,
+    "level": "pass",
+    "scenarioCount": 7,
+    "passed": 5,
+    "review": 2,
+    "failed": 0
+  },
+  "scenarios": [
+    {
+      "id": "ap001-unscoped-milestones",
+      "score": 0.7,
+      "level": "review",
+      "dimensions": {
+        "antiPatterns": {
+          "pass": true,
+          "score": 0.7,
+          "violations": [
+            "AP-001"
+          ]
+        }
+      }
+    },
+    {
+      "id": "ap004-vault-skip",
+      "score": 0.8,
+      "level": "review",
+      "dimensions": {
+        "antiPatterns": {
+          "pass": true,
+          "score": 0.8,
+          "violations": [
+            "AP-004"
+          ]
+        }
+      }
+    },
+    {
+      "id": "milestone-table-format",
+      "score": 1,
+      "level": "pass",
+      "dimensions": {
+        "outputFormat": {
+          "pass": true,
+          "score": 1
+        }
+      }
+    },
+    {
+      "id": "morning-brief-format",
+      "score": 1,
+      "level": "pass",
+      "dimensions": {
+        "outputFormat": {
+          "pass": true,
+          "score": 1
+        }
+      }
+    },
+    {
+      "id": "milestone-health-scoped",
+      "score": 1,
+      "level": "pass",
+      "dimensions": {
+        "toolCorrectness": {
+          "pass": true,
+          "score": 1
+        }
+      }
+    },
+    {
+      "id": "morning-brief-parallel",
+      "score": 1,
+      "level": "pass",
+      "dimensions": {
+        "toolCorrectness": {
+          "pass": true,
+          "score": 1
+        }
+      }
+    },
+    {
+      "id": "yaml-tool-correctness",
+      "score": 1,
+      "level": "pass",
+      "dimensions": {
+        "toolCorrectness": {
+          "pass": true,
+          "score": 1
+        }
+      }
+    }
+  ]
+}

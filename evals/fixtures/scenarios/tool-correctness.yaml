@@ -1,0 +1,82 @@
+# Tool Call Correctness Evaluation Scenarios
+# Tests: given a skill activation, does the agent call the expected tools?
+
+scenarios:
+  - id: milestone-health-scoped
+    skill: milestone-health-review
+    fixture: overdueMilestones
+    context:
+      mediums: [crm, vault]
+      role: CSAM
+      customer: Contoso
+    expected_calls:
+      - tool: "msx:crm_auth_status"
+        order: 1
+      - tool: "oil:get_customer_context"
+        params_contains:
+          customer: "Contoso"
+        order: 2
+      - tool: "msx:get_milestones"
+        params_contains:
+          customerKeyword: "Contoso"
+          statusFilter: "active"
+          includeTasks: true
+        order: 3
+    forbidden_calls:
+      - tool: "msx:get_milestones"
+        params: {}
+
+  - id: morning-brief-parallel
+    skill: morning-brief
+    fixture: pipelineHealth
+    context:
+      mediums: [crm, vault, workiq]
+      role: CSA
+    expected_calls:
+      - tool: "oil:get_vault_context"
+        phase: 1
+      - tool: "msx:crm_auth_status"
+        phase: 1
+      - tool: "msx:get_my_active_opportunities"
+        phase: 2
+      - tool: "msx:get_milestones"
+        phase: 2
+        params_contains:
+          statusFilter: "active"
+          includeTasks: true
+
+  - id: vault-first-crm-query
+    skill: vault-context-assembly
+    context:
+      mediums: [crm, vault]
+    expected_calls:
+      - tool: "oil:get_vault_context"
+        order: 1
+      - tool: "oil:get_customer_context"
+        order: 2
+
+  - id: pipeline-with-auth-check
+    skill: pipeline-hygiene-triage
+    fixture: stalePipeline
+    context:
+      mediums: [crm]
+      role: Specialist
+    expected_calls:
+      - tool: "msx:crm_auth_status"
+        order: 1
+      - tool: "msx:get_my_active_opportunities"
+        order: 2
+
+  - id: task-hygiene-scoped
+    skill: se-execution-check
+    fixture: pipelineHealth
+    context:
+      mediums: [crm]
+      role: SE
+    expected_calls:
+      - tool: "msx:crm_auth_status"
+        order: 1
+      - tool: "msx:get_milestones"
+        params_contains:
+          includeTasks: true
+        order: 2

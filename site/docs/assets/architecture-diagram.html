@@ -1,0 +1,1405 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MCAPS IQ — How It Works</title>
+<style>
+  /* ── Reset & Base ─────────────────────────────────── */
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { font-size: 14px; }
+  body {
+    font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: #f5f5f5;
+    color: #1b1b1b;
+  }
+  .page {
+    width: 100%;
+    max-width: 1680px;
+    margin: 0 auto;
+    background: #fff;
+    box-shadow: 0 2px 24px rgba(0,0,0,.08);
+  }
+
+  /* ── Color tokens ─────────────────────────────────── */
+  :root {
+    --ms-blue: #0078D4;
+    --ms-blue-light: #D0E8FF;
+    --teal: #00B7C3;
+    --teal-light: #D4F5F7;
+    --green: #107C10;
+    --green-light: #DFF6DD;
+    --amber: #FFB900;
+    --amber-light: #FFF4CE;
+    --purple: #5C2D91;
+    --purple-light: #EDE0F7;
+    --red: #D13438;
+    --red-light: #FDE7E9;
+    --gray: #737373;
+    --gray-light: #E6E6E6;
+    --charcoal: #1B1B1B;
+  }
+
+  /* ── Section 1: Hero Banner ───────────────────────── */
+  .hero-banner {
+    background: linear-gradient(135deg, #1B1B1B 0%, #2d2d2d 40%, #3a3a3a 100%);
+    color: #fff;
+    padding: 40px 48px 36px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+  }
+  .hero-banner h1 {
+    font-size: 2rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .hero-banner h1 span { color: var(--teal); }
+  .hero-banner .subtitle {
+    font-size: 1.05rem;
+    opacity: 0.7;
+    max-width: 800px;
+  }
+  .hero-nav {
+    display: flex;
+    gap: 12px;
+    margin-top: 8px;
+    flex-wrap: wrap;
+  }
+  .hero-nav a {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(255,255,255,.1);
+    border: 1px solid rgba(255,255,255,.2);
+    border-radius: 8px;
+    padding: 10px 18px;
+    color: #fff;
+    text-decoration: none;
+    font-size: 0.85rem;
+    font-weight: 600;
+    transition: background .15s;
+  }
+  .hero-nav a:hover { background: rgba(255,255,255,.18); }
+
+  /* ── Section 2: The Big Picture ───────────────────── */
+  .big-picture {
+    padding: 36px 48px 28px;
+    background: #fff;
+  }
+  .big-picture h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .big-picture .bp-sub {
+    font-size: 0.92rem;
+    color: var(--gray);
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+
+  /* Flow diagram */
+  .flow-diagram {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    padding: 0 20px;
+    position: relative;
+    flex-wrap: wrap;
+    justify-content: center;
+  }
+  .flow-node {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    text-align: center;
+    flex-shrink: 0;
+  }
+  .flow-node .fn-icon {
+    width: 72px; height: 72px;
+    border-radius: 18px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 2rem;
+    color: #fff;
+    box-shadow: 0 4px 16px rgba(0,0,0,.12);
+  }
+  .flow-node .fn-label {
+    font-size: 0.88rem;
+    font-weight: 700;
+    line-height: 1.2;
+  }
+  .flow-node .fn-detail {
+    font-size: 0.72rem;
+    color: var(--gray);
+    max-width: 140px;
+    line-height: 1.3;
+  }
+  .flow-arrow {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    min-width: 80px;
+  }
+  .flow-arrow .fa-line {
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--gray-light), var(--ms-blue), var(--gray-light));
+    border-radius: 2px;
+    position: relative;
+  }
+  .flow-arrow .fa-line::after {
+    content: '▸';
+    position: absolute;
+    right: -6px;
+    top: -9px;
+    font-size: 1.2rem;
+    color: var(--ms-blue);
+  }
+  .flow-arrow .fa-label {
+    font-size: 0.68rem;
+    color: var(--gray);
+    font-weight: 600;
+    white-space: nowrap;
+  }
+
+  /* ── Section 3: Four Layers ───────────────────────── */
+  .layers-section {
+    padding: 32px 48px 36px;
+    background: #fafafa;
+    border-top: 1px solid var(--gray-light);
+    border-bottom: 1px solid var(--gray-light);
+  }
+  .layers-section h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .layers-section .ls-sub {
+    font-size: 0.92rem;
+    color: var(--gray);
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+
+  .layer-stack {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+  .layer-row {
+    display: flex;
+    gap: 0;
+    border: 2px solid;
+    border-bottom: none;
+    position: relative;
+  }
+  .layer-row:last-child { border-bottom: 2px solid; border-radius: 0 0 14px 14px; }
+  .layer-row:first-child { border-radius: 14px 14px 0 0; }
+  .layer-row.lr-0 { border-color: var(--ms-blue); z-index: 4; }
+  .layer-row.lr-1 { border-color: var(--teal); z-index: 3; }
+  .layer-row.lr-2 { border-color: var(--purple); z-index: 2; }
+  .layer-row.lr-3 { border-color: var(--green); z-index: 1; }
+
+  .layer-badge {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+    font-size: 0.75rem;
+    font-weight: 800;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    padding: 14px 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #fff;
+    min-width: 42px;
+  }
+  .lr-0 .layer-badge { background: var(--ms-blue); }
+  .lr-1 .layer-badge { background: var(--teal); }
+  .lr-2 .layer-badge { background: var(--purple); }
+  .lr-3 .layer-badge { background: var(--green); }
+
+  .layer-body {
+    flex: 1;
+    padding: 20px 24px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+  .lr-0 .layer-body { background: var(--ms-blue-light); }
+  .lr-1 .layer-body { background: var(--teal-light); }
+  .lr-2 .layer-body { background: var(--purple-light); }
+  .lr-3 .layer-body { background: var(--green-light); }
+
+  .layer-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .layer-info h4 {
+    font-size: 1rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .layer-info .li-when {
+    font-size: 0.78rem;
+    color: var(--gray);
+    font-style: italic;
+  }
+  .layer-info p {
+    font-size: 0.85rem;
+    line-height: 1.5;
+    max-width: 500px;
+  }
+
+  .layer-file-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 14px 18px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.06);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    min-width: 280px;
+    max-width: 380px;
+  }
+  .layer-file-box .lfb-header {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .layer-file-box .lfb-file {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.82rem;
+    padding: 4px 0;
+  }
+  .layer-file-box .lfb-file code {
+    background: rgba(0,0,0,.06);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.78rem;
+  }
+
+  .layer-edit-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    padding: 3px 10px;
+    border-radius: 4px;
+    flex-shrink: 0;
+  }
+  .edit-yes { background: var(--green-light); color: var(--green); }
+  .edit-care { background: var(--amber-light); color: #946200; }
+  .edit-ref { background: #f0f0f0; color: var(--gray); }
+
+  /* ── Section 4: What Can I Customize? ─────────────── */
+  .customize-section {
+    padding: 36px 48px;
+    background: #fff;
+  }
+  .customize-section h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .customize-section .cs-sub {
+    font-size: 0.92rem;
+    color: var(--gray);
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+  .scenario-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+  }
+  .scenario-card {
+    background: #fff;
+    border-radius: 14px;
+    border: 2px solid var(--gray-light);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    transition: border-color .15s, box-shadow .15s;
+    cursor: default;
+  }
+  .scenario-card:hover {
+    border-color: var(--ms-blue);
+    box-shadow: 0 4px 16px rgba(0,120,212,.12);
+  }
+  .scenario-card .sc-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .scenario-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+  }
+  .scenario-card .sc-desc {
+    font-size: 0.82rem;
+    line-height: 1.5;
+    color: #444;
+  }
+  .scenario-card .sc-where {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    padding: 8px 12px;
+    background: #f7f7f7;
+    border-radius: 8px;
+  }
+  .scenario-card .sc-where code {
+    background: rgba(0,0,0,.06);
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.75rem;
+  }
+  .sc-layer-tag {
+    font-size: 0.65rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+  .tag-t0 { background: var(--ms-blue-light); color: var(--ms-blue); }
+  .tag-t1 { background: var(--teal-light); color: #008b94; }
+  .tag-t2 { background: var(--purple-light); color: var(--purple); }
+  .tag-mcp { background: var(--green-light); color: var(--green); }
+
+  /* ── Section 5: Data Sources ──────────────────────── */
+  .data-layer {
+    background: var(--charcoal);
+    color: #fff;
+    padding: 32px 48px 28px;
+    border-top: 4px solid var(--ms-blue);
+  }
+  .data-layer h2 {
+    font-size: 1.1rem;
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    opacity: 0.6;
+    font-weight: 600;
+    text-align: center;
+    margin-bottom: 24px;
+  }
+  .mcp-grid {
+    display: flex;
+    justify-content: center;
+    gap: 24px;
+    margin-bottom: 24px;
+    flex-wrap: wrap;
+  }
+  .mcp-card {
+    background: rgba(255,255,255,.07);
+    border: 1.5px solid rgba(255,255,255,.15);
+    border-radius: 14px;
+    padding: 22px 24px;
+    min-width: 200px;
+    max-width: 280px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    transition: background .2s;
+  }
+  .mcp-card:hover { background: rgba(255,255,255,.12); }
+  .mcp-card .mc-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .mcp-card .mc-icon {
+    width: 48px; height: 48px;
+    border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.5rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .mcp-card h4 { font-size: 0.95rem; font-weight: 700; }
+  .mcp-card .mc-sub { font-size: 0.72rem; opacity: 0.55; }
+  .mcp-card .mc-tools {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px;
+    font-size: 0.7rem;
+  }
+  .mcp-card .mc-tools span {
+    padding: 2px 8px;
+    background: rgba(255,255,255,.1);
+    border-radius: 4px;
+  }
+  .mcp-card .mc-config {
+    font-size: 0.75rem;
+    opacity: 0.5;
+    margin-top: auto;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .mcp-card .mc-config code {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.72rem;
+    opacity: 0.7;
+  }
+
+  /* Connection lines */
+  .mcp-connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0;
+    padding: 4px 0;
+  }
+  .mcp-connector .mc-line {
+    flex: 1;
+    height: 2px;
+    background: linear-gradient(90deg, var(--ms-blue), var(--teal), var(--green), var(--purple));
+    border-radius: 1px;
+    max-width: 800px;
+  }
+  .mcp-connector .mc-hub {
+    background: rgba(255,255,255,.1);
+    border: 1.5px solid rgba(255,255,255,.25);
+    border-radius: 14px;
+    padding: 10px 28px;
+    font-size: 0.85rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    white-space: nowrap;
+  }
+
+  /* ── Section 6: Keyword Routing ───────────────────── */
+  .routing-section {
+    padding: 36px 48px;
+    background: #fff;
+    border-top: 1px solid var(--gray-light);
+  }
+  .routing-section h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .routing-section .rs-sub {
+    font-size: 0.92rem;
+    color: var(--gray);
+    margin-bottom: 28px;
+    max-width: 700px;
+  }
+  .routing-demo {
+    display: flex;
+    gap: 0;
+    align-items: stretch;
+    max-width: 1200px;
+    flex-wrap: wrap;
+  }
+  .rd-user {
+    background: #f0f5ff;
+    border: 2px solid var(--ms-blue);
+    border-radius: 14px 0 0 14px;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    justify-content: center;
+    min-width: 280px;
+  }
+  .rd-user .rd-avatar {
+    width: 36px; height: 36px;
+    border-radius: 50%;
+    background: var(--ms-blue);
+    color: #fff;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+  .rd-user .rd-prompt {
+    font-size: 0.95rem;
+    font-weight: 500;
+    line-height: 1.4;
+  }
+  .rd-user .rd-prompt em {
+    background: rgba(0,120,212,.1);
+    padding: 1px 4px;
+    border-radius: 3px;
+    font-style: normal;
+    font-weight: 700;
+    color: var(--ms-blue);
+  }
+  .rd-engine {
+    background: var(--charcoal);
+    color: #fff;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    justify-content: center;
+    align-items: center;
+    min-width: 200px;
+  }
+  .rd-engine .rd-cog { font-size: 2rem; }
+  .rd-engine .rd-label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    opacity: 0.8;
+    line-height: 1.3;
+  }
+  .rd-results {
+    background: #f8faf8;
+    border: 2px solid var(--green);
+    border-radius: 0 14px 14px 0;
+    padding: 24px 28px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex: 1;
+  }
+  .rd-results h5 {
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: var(--gray);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 4px;
+  }
+  .rd-match {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.82rem;
+    padding: 6px 12px;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.05);
+  }
+  .rd-match .rdm-status {
+    width: 22px; height: 22px;
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    color: #fff;
+    flex-shrink: 0;
+  }
+  .rdm-yes { background: var(--green); }
+  .rdm-no { background: var(--gray-light); color: var(--gray); }
+  .rd-match code {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.78rem;
+    background: rgba(0,0,0,.04);
+    padding: 1px 6px;
+    border-radius: 3px;
+  }
+  .rd-match .rdm-reason {
+    font-size: 0.72rem;
+    color: var(--gray);
+    margin-left: auto;
+  }
+
+  /* ── Section 7: Skill Chains ──────────────────────── */
+  .chains-section {
+    padding: 32px 48px 36px;
+    background: #fafafa;
+    border-top: 1px solid var(--gray-light);
+  }
+  .chains-section h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 6px;
+  }
+  .chains-section .ch-sub {
+    font-size: 0.92rem;
+    color: var(--gray);
+    margin-bottom: 24px;
+    max-width: 700px;
+  }
+  .chain-examples {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+  .chain-card {
+    flex: 1;
+    background: #fff;
+    border-radius: 14px;
+    border: 1.5px solid var(--gray-light);
+    padding: 22px 24px;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    box-shadow: 0 1px 5px rgba(0,0,0,.05);
+  }
+  .chain-card h4 {
+    font-size: 0.95rem;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .chain-card .cc-trigger {
+    font-size: 0.82rem;
+    font-style: italic;
+    color: #555;
+    padding: 8px 14px;
+    background: #f0f5ff;
+    border: 1px solid var(--ms-blue-light);
+    border-radius: 8px;
+  }
+  .chain-card .cc-trigger::before { content: '"'; color: var(--ms-blue); font-weight: 700; font-style: normal; margin-right: 2px; }
+  .chain-card .cc-trigger::after { content: '"'; color: var(--ms-blue); font-weight: 700; font-style: normal; margin-left: 2px; }
+  .chain-flow {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    flex-wrap: wrap;
+  }
+  .cf-skill {
+    padding: 8px 14px;
+    border-radius: 8px;
+    font-size: 0.78rem;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.3;
+    white-space: nowrap;
+  }
+  .cf-arrow {
+    font-size: 1.1rem;
+    color: var(--gray);
+    padding: 0 6px;
+  }
+
+  /* ── Section 8: Quick Ref ─────────────────────────── */
+  .quick-ref {
+    padding: 32px 48px 28px;
+    background: #fff;
+    border-top: 1px solid var(--gray-light);
+  }
+  .quick-ref h2 {
+    font-size: 1.3rem;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  .ref-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.85rem;
+  }
+  .ref-table th {
+    text-align: left;
+    padding: 12px 16px;
+    background: #f7f7f7;
+    font-weight: 700;
+    border-bottom: 2px solid var(--gray-light);
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: var(--gray);
+  }
+  .ref-table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+  }
+  .ref-table tr:hover td { background: #fafafa; }
+  .ref-table code {
+    font-family: 'Cascadia Code', 'Fira Code', monospace;
+    font-size: 0.8rem;
+    background: rgba(0,0,0,.04);
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+  .ref-editable {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.72rem;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 4px;
+  }
+
+  /* ── Footer ───────────────────────────────────────── */
+  .footer-note {
+    text-align: center;
+    padding: 14px 48px;
+    font-size: 0.72rem;
+    color: var(--gray);
+    background: #fafafa;
+    border-top: 1px solid var(--gray-light);
+  }
+
+  /* ── Utility ──────────────────────────────────────── */
+  .section-divider {
+    height: 4px;
+    background: linear-gradient(90deg, var(--ms-blue), var(--teal), var(--green), var(--purple));
+  }
+
+  /* ── Responsive ────────────────────────────────────── */
+  @media (max-width: 1200px) {
+    .hero-banner { padding: 32px 24px 28px; }
+    .big-picture { padding: 28px 24px 22px; }
+    .layers-section { padding: 28px 24px 30px; }
+    .customize-section { padding: 28px 24px; }
+    .data-layer { padding: 28px 24px 22px; }
+    .routing-section { padding: 28px 24px; }
+    .chains-section { padding: 28px 24px 30px; }
+    .quick-ref { padding: 28px 24px 22px; }
+    .footer-note { padding: 12px 24px; }
+    .scenario-grid { grid-template-columns: repeat(2, 1fr); }
+    .layer-file-box { min-width: 220px; }
+    .mcp-card { min-width: 180px; }
+  }
+
+  @media (max-width: 900px) {
+    html { font-size: 13px; }
+    .hero-banner { padding: 24px 16px 20px; }
+    .hero-nav a { padding: 8px 12px; font-size: 0.8rem; }
+    .big-picture { padding: 22px 16px 18px; }
+    .flow-diagram { padding: 0; gap: 8px; }
+    .flow-arrow { min-width: 50px; }
+    .flow-arrow .fa-label { font-size: 0.62rem; }
+    .flow-node .fn-icon { width: 56px; height: 56px; font-size: 1.5rem; border-radius: 14px; }
+    .flow-node .fn-detail { max-width: 110px; font-size: 0.68rem; }
+    .layers-section { padding: 22px 16px 24px; }
+    .layer-body { padding: 14px 16px; gap: 14px; }
+    .layer-file-box { min-width: 0; max-width: none; }
+    .layer-badge { font-size: 0.68rem; min-width: 34px; padding: 10px 6px; }
+    .customize-section { padding: 22px 16px; }
+    .scenario-grid { grid-template-columns: 1fr; gap: 14px; }
+    .data-layer { padding: 22px 16px 18px; }
+    .mcp-card { min-width: 160px; max-width: none; }
+    .routing-section { padding: 22px 16px; }
+    .routing-demo { flex-direction: column; }
+    .rd-user { border-radius: 14px 14px 0 0; min-width: 0; }
+    .rd-engine { min-width: 0; }
+    .rd-results { border-radius: 0 0 14px 14px; }
+    .chains-section { padding: 22px 16px 24px; }
+    .chain-card { flex: 1 1 100%; }
+    .quick-ref { padding: 22px 16px 18px; }
+    .ref-table { font-size: 0.8rem; }
+    .ref-table th, .ref-table td { padding: 8px 10px; }
+    .footer-note { padding: 10px 16px; }
+  }
+
+  @media (max-width: 600px) {
+    html { font-size: 12px; }
+    .hero-banner { padding: 18px 12px 14px; gap: 10px; }
+    .hero-banner h1 { font-size: 1.6rem; }
+    .hero-nav { gap: 8px; }
+    .hero-nav a { padding: 6px 10px; font-size: 0.75rem; }
+    .big-picture { padding: 16px 12px 14px; }
+    .flow-node .fn-icon { width: 48px; height: 48px; font-size: 1.3rem; border-radius: 12px; }
+    .flow-node .fn-detail { display: none; }
+    .flow-arrow .fa-label { display: none; }
+    .flow-arrow { min-width: 30px; }
+    .layers-section { padding: 16px 12px 18px; }
+    .layer-badge { display: none; }
+    .layer-row { border-radius: 10px !important; border-bottom: 2px solid !important; margin-bottom: -2px; }
+    .layer-body { border-radius: 10px; padding: 12px; }
+    .layer-file-box { padding: 10px 12px; }
+    .customize-section { padding: 16px 12px; }
+    .scenario-card { padding: 16px; }
+    .data-layer { padding: 16px 12px 14px; }
+    .mcp-card { padding: 16px; min-width: 140px; }
+    .mcp-card .mc-tools { display: none; }
+    .routing-section { padding: 16px 12px; }
+    .rd-user { padding: 16px; }
+    .rd-engine { padding: 16px; }
+    .rd-results { padding: 16px; }
+    .rd-match .rdm-reason { display: none; }
+    .chains-section { padding: 16px 12px 18px; }
+    .chain-card { padding: 16px; }
+    .quick-ref { padding: 16px 12px 14px; }
+    .ref-table th:nth-child(4), .ref-table td:nth-child(4) { display: none; }
+    .ref-table th, .ref-table td { padding: 6px 8px; }
+    .footer-note { padding: 8px 12px; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 1 — HERO
+     ════════════════════════════════════════════════════ -->
+<section class="hero-banner">
+  <div>
+    <h1>How <span>MCAPS IQ</span> Works</h1>
+    <p class="subtitle">A visual guide to the architecture — what the pieces are, how they connect, and where to make changes.</p>
+  </div>
+  <div class="hero-nav">
+    <a href="#big-picture">🗺️ The Big Picture</a>
+    <a href="#layers">📦 The Four Layers</a>
+    <a href="#customize">✏️ What Can I Change?</a>
+    <a href="#data-sources">🔌 Data Sources</a>
+    <a href="#routing">🧠 How Routing Works</a>
+    <a href="#quick-ref">📋 Quick Reference</a>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 2 — BIG PICTURE FLOW
+     ════════════════════════════════════════════════════ -->
+<section class="big-picture" id="big-picture">
+  <h2>The Big Picture</h2>
+  <p class="bp-sub">You type a question in plain English. Behind the scenes, five things happen — automatically.</p>
+
+  <div class="flow-diagram">
+    <!-- Step 1: You -->
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--ms-blue);">🧑‍💻</div>
+      <div class="fn-label">You</div>
+      <div class="fn-detail">Type a question in Copilot Chat</div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="fa-label">plain English</div>
+      <div class="fa-line"></div>
+    </div>
+
+    <!-- Step 2: Copilot -->
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--charcoal);">🤖</div>
+      <div class="fn-label">Copilot</div>
+      <div class="fn-detail">Reads your prompt and checks for matching skills</div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="fa-label">keyword match</div>
+      <div class="fa-line"></div>
+    </div>
+
+    <!-- Step 3: Skills -->
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--purple);">🧠</div>
+      <div class="fn-label">Skills & Rules</div>
+      <div class="fn-detail">Domain expertise loaded from .github/ files</div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="fa-label">tool calls</div>
+      <div class="fa-line"></div>
+    </div>
+
+    <!-- Step 4: MCP -->
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--teal);">🔌</div>
+      <div class="fn-label">MCP Servers</div>
+      <div class="fn-detail">Bridges to CRM, M365, Vault, Power BI</div>
+    </div>
+
+    <div class="flow-arrow">
+      <div class="fa-label">query / read</div>
+      <div class="fa-line"></div>
+    </div>
+
+    <!-- Step 5: Data -->
+    <div class="flow-node">
+      <div class="fn-icon" style="background:var(--green);">🏢</div>
+      <div class="fn-label">Your Data</div>
+      <div class="fn-detail">CRM records, emails, notes, analytics</div>
+    </div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px;padding:14px 28px;background:linear-gradient(135deg,#f0f5ff,#f5f0ff);border-radius:10px;display:inline-flex;gap:12px;align-items:center;font-size:0.88rem;margin-left:auto;margin-right:auto;width:fit-content;">
+    <span style="font-size:1.3rem;">💡</span>
+    <span><strong>Key insight:</strong> The skills teach Copilot <em>how</em> to think about sales operations. The MCP servers give it <em>access</em> to your data. Both are made of plain text files you can edit.</span>
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 3 — FOUR LAYERS
+     ════════════════════════════════════════════════════ -->
+<section class="layers-section" id="layers">
+  <h2>The Four Layers</h2>
+  <p class="ls-sub">Everything in MCAPS IQ lives in one of four layers. Think of it like a building — the top floor handles every request, the lower floors only open when needed.</p>
+
+  <div class="layer-stack">
+
+    <!-- Tier 0 -->
+    <div class="layer-row lr-0">
+      <div class="layer-badge">Tier 0</div>
+      <div class="layer-body">
+        <div class="layer-info">
+          <h4>
+            🏠 Global Rules
+            <span class="layer-edit-tag edit-yes">✏️ Editable</span>
+          </h4>
+          <div class="li-when">Loaded on every single request</div>
+          <p>The "system prompt" — tells Copilot how to behave, what role you are, and how to route your requests. This is the #1 customization lever.</p>
+        </div>
+        <div class="layer-file-box">
+          <div class="lfb-header">📄 File</div>
+          <div class="lfb-file">📄 <code>.github/copilot-instructions.md</code></div>
+          <div style="font-size:0.75rem;color:var(--gray);padding-left:24px;">~80 lines · Controls default behavior, role selection, response style</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 1 -->
+    <div class="layer-row lr-1">
+      <div class="layer-badge">Tier 1</div>
+      <div class="layer-body">
+        <div class="layer-info">
+          <h4>
+            📋 Operational Rules
+            <span class="layer-edit-tag edit-yes">✏️ Editable</span>
+          </h4>
+          <div class="li-when">Loaded when your prompt matches keywords in the file's description</div>
+          <p>Workflow gates, CRM query patterns, entity schemas, write safety rules. These define <em>how</em> operations should be carried out.</p>
+        </div>
+        <div class="layer-file-box">
+          <div class="lfb-header">📁 Folder</div>
+          <div class="lfb-file">📁 <code>.github/instructions/</code></div>
+          <div style="font-size:0.75rem;color:var(--gray);padding-left:24px;">~10 files · CRM schema, query strategy, write gates, MCEM flow, shared patterns</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 2 -->
+    <div class="layer-row lr-2">
+      <div class="layer-badge">Tier 2</div>
+      <div class="layer-body">
+        <div class="layer-info">
+          <h4>
+            🧠 Domain Skills
+            <span class="layer-edit-tag edit-yes">✏️ Editable</span>
+          </h4>
+          <div class="li-when">Loaded when your prompt matches the skill's name or description</div>
+          <p>43 atomic skills — each one handles a specific capability like "milestone health review" or "pipeline hygiene triage." This is where the deep expertise lives.</p>
+        </div>
+        <div class="layer-file-box">
+          <div class="lfb-header">📁 Folder</div>
+          <div class="lfb-file">📁 <code>.github/skills/*/SKILL.md</code></div>
+          <div style="font-size:0.75rem;color:var(--gray);padding-left:24px;">43 skills · 30–80 lines each · Role cards, MCEM diagnostics, reviews, sync</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tier 3 -->
+    <div class="layer-row lr-3">
+      <div class="layer-badge">Tier 3</div>
+      <div class="layer-body">
+        <div class="layer-info">
+          <h4>
+            🔌 Data Connections
+            <span class="layer-edit-tag edit-care">⚙️ Advanced</span>
+          </h4>
+          <div class="li-when">Always available — these define what data Copilot can access</div>
+          <p>MCP server definitions, launch scripts, and prompt templates. These connect Copilot to CRM, M365, your vault, and Power BI.</p>
+        </div>
+        <div class="layer-file-box">
+          <div class="lfb-header">📄 Files</div>
+          <div class="lfb-file">📄 <code>.vscode/mcp.json</code></div>
+          <div class="lfb-file">📁 <code>.github/prompts/</code></div>
+          <div style="font-size:0.75rem;color:var(--gray);padding-left:24px;">MCP server registry + 20+ slash-command prompt templates</div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 4 — WHAT CAN I CUSTOMIZE?
+     ════════════════════════════════════════════════════ -->
+<section class="customize-section" id="customize">
+  <h2>"I Want to Change…" — Where to Go</h2>
+  <p class="cs-sub">Pick the scenario that matches what you want to do. Each card shows you exactly which file to edit.</p>
+
+  <div class="scenario-grid">
+
+    <!-- Card 1 -->
+    <div class="scenario-card">
+      <div class="sc-icon" style="background:var(--ms-blue);">🎭</div>
+      <h4>Change Copilot's default behavior</h4>
+      <div class="sc-desc">How it responds, what role it assumes, what it does first when you chat. This is the starting point for most customizations.</div>
+      <div class="sc-where">
+        <span class="sc-layer-tag tag-t0">Tier 0</span>
+        <code>.github/copilot-instructions.md</code>
+      </div>
+    </div>
+
+    <!-- Card 2 -->
+    <div class="scenario-card">
+      <div class="sc-icon" style="background:var(--teal);">📝</div>
+      <h4>Add a new workflow rule</h4>
+      <div class="sc-desc">E.g., "always check budget before creating a milestone" or "require manager approval for Stage 4 moves." Rules and gates live here.</div>
+      <div class="sc-where">
+        <span class="sc-layer-tag tag-t1">Tier 1</span>
+        <code>.github/instructions/your-rule.instructions.md</code>
+      </div>
+    </div>
+
+    <!-- Card 3 -->
+    <div class="scenario-card">
+      <div class="sc-icon" style="background:var(--purple);">🧠</div>
+      <h4>Teach Copilot a new capability</h4>
+      <div class="sc-desc">Create a new skill — a focused playbook for a specific task like "competitive analysis" or "partner engagement scoring."</div>
+      <div class="sc-where">
+        <span class="sc-layer-tag tag-t2">Tier 2</span>
+        <code>.github/skills/your-skill/SKILL.md</code>
+      </div>
+    </div>
+
+    <!-- Card 4 -->
+    <div class="scenario-card">
+      <div class="sc-icon" style="background:var(--green);">🔌</div>
+      <h4>Connect a new data source</h4>
+      <div class="sc-desc">Add or modify an MCP server to give Copilot access to a new system — like a custom API, database, or internal tool.</div>
+      <div class="sc-where">
+        <span class="sc-layer-tag tag-mcp">MCP</span>
+        <code>.vscode/mcp.json</code>
+      </div>
+    </div>
+
+    <!-- Card 5 -->
+    <div class="scenario-card">
+      <div class="sc-icon" style="background:var(--amber);color:var(--charcoal);">⚡</div>
+      <h4>Create a reusable prompt workflow</h4>
+      <div class="sc-desc">Build a slash command like <code>/morning-brief</code> or <code>/pipeline-review</code> that runs a multi-step workflow with one command.</div>
+      <div class="sc-where">
+        <span class="sc-layer-tag tag-mcp">Prompts</span>
+        <code>.github/prompts/your-prompt.prompt.md</code>
+      </div>
+    </div>
+
+    <!-- Card 6 -->
+    <div class="scenario-card">
+      <div class="sc-icon" style="background:#E8590C;">🏗️</div>
+      <h4>Modify how a role behaves</h4>
+      <div class="sc-desc">Adjust the playbook for a specific role — Specialist, SE, CSA, CSAM, AE, ATS, or Sales Director. Each has its own role card.</div>
+      <div class="sc-where">
+        <span class="sc-layer-tag tag-t2">Tier 2</span>
+        <code>.github/skills/role-{name}/SKILL.md</code>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<div class="section-divider"></div>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 5 — DATA SOURCES
+     ════════════════════════════════════════════════════ -->
+<section class="data-layer" id="data-sources">
+  <h2>Data Sources — MCP Servers</h2>
+
+  <div class="mcp-grid">
+    <!-- MSX CRM -->
+    <div class="mcp-card">
+      <div class="mc-header">
+        <div class="mc-icon" style="background:var(--ms-blue);">🏢</div>
+        <div>
+          <h4>MSX / CRM</h4>
+          <div class="mc-sub">Dynamics 365 via OData</div>
+        </div>
+      </div>
+      <div class="mc-tools">
+        <span>crm_query</span>
+        <span>get_milestones</span>
+        <span>create_task</span>
+        <span>update_milestone</span>
+        <span>+18 more</span>
+      </div>
+      <div class="mc-config">📄 Config: <code>.vscode/mcp.json → "msx"</code></div>
+    </div>
+
+    <!-- M365 -->
+    <div class="mcp-card">
+      <div class="mc-header">
+        <div class="mc-icon" style="background:var(--teal);">📧</div>
+        <div>
+          <h4>Microsoft 365</h4>
+          <div class="mc-sub">Calendar · Mail · Teams</div>
+        </div>
+      </div>
+      <div class="mc-tools">
+        <span>ListCalendarView</span>
+        <span>SearchMessages</span>
+        <span>ListChats</span>
+        <span>PostMessage</span>
+        <span>+30 more</span>
+      </div>
+      <div class="mc-config">📄 Built-in MCP tools</div>
+    </div>
+
+    <!-- Vault -->
+    <div class="mcp-card">
+      <div class="mc-header">
+        <div class="mc-icon" style="background:var(--green);">📓</div>
+        <div>
+          <h4>Obsidian Vault</h4>
+          <div class="mc-sub">Local knowledge layer</div>
+        </div>
+      </div>
+      <div class="mc-tools">
+        <span>search_vault</span>
+        <span>read_note_section</span>
+        <span>atomic_replace</span>
+        <span>create_note</span>
+        <span>+18 more</span>
+      </div>
+      <div class="mc-config">📄 Config: <code>.vscode/mcp.json → "oil"</code></div>
+    </div>
+
+    <!-- Power BI -->
+    <div class="mcp-card">
+      <div class="mc-header">
+        <div class="mc-icon" style="background:var(--purple);">📊</div>
+        <div>
+          <h4>Power BI</h4>
+          <div class="mc-sub">MSXI · OctoDash · Azure AIO</div>
+        </div>
+      </div>
+      <div class="mc-tools">
+        <span>ExecuteQuery</span>
+        <span>GetSchema</span>
+        <span>GenerateQuery</span>
+        <span>DiscoverArtifacts</span>
+      </div>
+      <div class="mc-config">📄 Config: <code>.vscode/mcp.json → "powerbi"</code></div>
+    </div>
+  </div>
+
+  <div class="mcp-connector">
+    <div class="mc-line"></div>
+  </div>
+  <div style="display:flex;justify-content:center;">
+    <div class="mcp-connector mc-hub">
+      <span style="font-size:1.5rem;">🤖</span>
+      GitHub Copilot — all queries routed through MCP protocol
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 6 — KEYWORD ROUTING
+     ════════════════════════════════════════════════════ -->
+<section class="routing-section" id="routing">
+  <h2>How Skill Routing Works</h2>
+  <p class="rs-sub">You don't pick skills manually. Copilot reads your prompt and matches keywords against every skill's description to decide which ones to load.</p>
+
+  <div class="routing-demo">
+    <!-- User prompt -->
+    <div class="rd-user">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <div class="rd-avatar">JL</div>
+        <span style="font-size:0.78rem;color:var(--gray);font-weight:600;">YOUR PROMPT</span>
+      </div>
+      <div class="rd-prompt">
+        "Review my <em>pipeline</em> and flag any <em>stale deals</em> before my <em>weekly</em> review"
+      </div>
+    </div>
+
+    <!-- Engine -->
+    <div class="rd-engine">
+      <div class="rd-cog">⚙️</div>
+      <div class="rd-label">Copilot scans<br><strong>43 skill descriptions</strong><br>for keyword matches</div>
+    </div>
+
+    <!-- Results -->
+    <div class="rd-results">
+      <h5>Skills Activated</h5>
+      <div class="rd-match">
+        <div class="rdm-status rdm-yes">✓</div>
+        <code>pipeline-hygiene-triage</code>
+        <span class="rdm-reason">matched: "pipeline", "stale"</span>
+      </div>
+      <div class="rd-match">
+        <div class="rdm-status rdm-yes">✓</div>
+        <code>risk-surfacing</code>
+        <span class="rdm-reason">matched: "flag", "risks"</span>
+      </div>
+      <div class="rd-match">
+        <div class="rdm-status rdm-yes">✓</div>
+        <code>shared-patterns</code>
+        <span class="rdm-reason">matched: "pipeline", "review"</span>
+      </div>
+      <h5 style="margin-top:6px;">Skills Skipped</h5>
+      <div class="rd-match" style="opacity:0.5;">
+        <div class="rdm-status rdm-no">—</div>
+        <code>processing-presentations</code>
+        <span class="rdm-reason">no keyword overlap</span>
+      </div>
+      <div class="rd-match" style="opacity:0.5;">
+        <div class="rdm-status rdm-no">—</div>
+        <code>proof-plan-orchestration</code>
+        <span class="rdm-reason">no keyword overlap</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="margin-top:20px;padding:14px 24px;background:var(--amber-light);border-radius:10px;font-size:0.85rem;display:flex;gap:12px;align-items:flex-start;max-width:1200px;">
+    <span style="font-size:1.1rem;">💡</span>
+    <span><strong>Tip:</strong> If a skill isn't activating when you expect it to, check its <code>description</code> field in the SKILL.md frontmatter. Does it contain words you'd naturally use? Add more trigger phrases to improve matching.</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 7 — SKILL CHAINS
+     ════════════════════════════════════════════════════ -->
+<section class="chains-section">
+  <h2>Skills Chain Together Automatically</h2>
+  <p class="ch-sub">You describe the outcome — Copilot figures out which skills to run and in what order. Here are common chains:</p>
+
+  <div class="chain-examples">
+
+    <!-- Chain 1 -->
+    <div class="chain-card">
+      <h4>📊 Weekly Pipeline Review</h4>
+      <div class="cc-trigger">Run my weekly pipeline review. What needs cleanup?</div>
+      <div class="chain-flow">
+        <div class="cf-skill" style="background:var(--ms-blue-light);color:var(--ms-blue);">pipeline-hygiene-triage</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-skill" style="background:var(--teal-light);color:#008b94;">handoff-readiness</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-skill" style="background:var(--red-light);color:var(--red);">risk-surfacing</div>
+      </div>
+    </div>
+
+    <!-- Chain 2 -->
+    <div class="chain-card">
+      <h4>🏥 Governance Prep</h4>
+      <div class="cc-trigger">Prep me for governance — what stage are we really in?</div>
+      <div class="chain-flow">
+        <div class="cf-skill" style="background:var(--purple-light);color:var(--purple);">mcem-diagnostics</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-skill" style="background:var(--green-light);color:var(--green);">milestone-health</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-skill" style="background:var(--amber-light);color:#946200;">evidence-pack</div>
+      </div>
+    </div>
+
+    <!-- Chain 3 -->
+    <div class="chain-card">
+      <h4>🔒 Commit Decision</h4>
+      <div class="cc-trigger">Should we commit this milestone? What's missing?</div>
+      <div class="chain-flow">
+        <div class="cf-skill" style="background:var(--amber-light);color:#946200;">commit-gate</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-skill" style="background:var(--red-light);color:var(--red);">non-linear-progression</div>
+        <div class="cf-arrow">→</div>
+        <div class="cf-skill" style="background:var(--ms-blue-light);color:var(--ms-blue);">delivery-mapping</div>
+      </div>
+    </div>
+
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     SECTION 8 — QUICK REFERENCE TABLE
+     ════════════════════════════════════════════════════ -->
+<section class="quick-ref" id="quick-ref">
+  <h2>Quick Reference — File Map</h2>
+
+  <table class="ref-table">
+    <thead>
+      <tr>
+        <th style="width:30%;">File / Folder</th>
+        <th style="width:35%;">What's Inside</th>
+        <th style="width:15%;">Editable?</th>
+        <th style="width:20%;">When to Touch</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td><code>.github/copilot-instructions.md</code></td>
+        <td>Global Copilot behavior — the "system prompt"</td>
+        <td><span class="ref-editable" style="background:var(--green-light);color:var(--green);">✅ Yes — Start Here</span></td>
+        <td>Change default behavior, response style, role</td>
+      </tr>
+      <tr>
+        <td><code>.github/instructions/</code></td>
+        <td>Operational rules, CRM schemas, workflow gates</td>
+        <td><span class="ref-editable" style="background:var(--green-light);color:var(--green);">✅ Yes</span></td>
+        <td>Add workflow gates or operational rules</td>
+      </tr>
+      <tr>
+        <td><code>.github/skills/*/SKILL.md</code></td>
+        <td>43 domain skills — each a focused playbook</td>
+        <td><span class="ref-editable" style="background:var(--green-light);color:var(--green);">✅ Yes</span></td>
+        <td>Add capabilities or tweak existing ones</td>
+      </tr>
+      <tr>
+        <td><code>.github/prompts/</code></td>
+        <td>Reusable prompt templates (slash commands)</td>
+        <td><span class="ref-editable" style="background:var(--green-light);color:var(--green);">✅ Yes</span></td>
+        <td>Create workflows you repeat often</td>
+      </tr>
+      <tr>
+        <td><code>.github/agents/</code></td>
+        <td>Agent definitions (subagents for delegation)</td>
+        <td><span class="ref-editable" style="background:var(--green-light);color:var(--green);">✅ Yes</span></td>
+        <td>Add specialized sub-agents</td>
+      </tr>
+      <tr>
+        <td><code>.vscode/mcp.json</code></td>
+        <td>MCP server definitions (data connections)</td>
+        <td><span class="ref-editable" style="background:var(--amber-light);color:#946200;">⚙️ Advanced</span></td>
+        <td>Connect or reconfigure data sources</td>
+      </tr>
+      <tr>
+        <td><code>scripts/</code></td>
+        <td>Launch scripts, helper utilities, eval tools</td>
+        <td><span class="ref-editable" style="background:var(--amber-light);color:#946200;">⚙️ Advanced</span></td>
+        <td>Modify server startup or data processing</td>
+      </tr>
+      <tr>
+        <td><code>evals/</code></td>
+        <td>Test harness for skill routing and quality</td>
+        <td><span class="ref-editable" style="background:#f0f0f0;color:var(--gray);">📖 Reference</span></td>
+        <td>Run after changes to verify nothing broke</td>
+      </tr>
+      <tr>
+        <td><code>docs/</code> · <code>site/</code></td>
+        <td>Architecture docs and published site</td>
+        <td><span class="ref-editable" style="background:#f0f0f0;color:var(--gray);">📖 Reference</span></td>
+        <td>Read when you need to understand something</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ════════════════════════════════════════════════════
+     FOOTER
+     ════════════════════════════════════════════════════ -->
+<div class="footer-note">
+  MCAPS IQ — AI-Powered Sales Operations for MCAPS Account Teams &nbsp;·&nbsp; All customization files are plain Markdown — no coding required. &nbsp;·&nbsp; github.com/Microsoft/MCAPS-IQ
+</div>
+
+</div><!-- /page -->
+</body>
+</html>

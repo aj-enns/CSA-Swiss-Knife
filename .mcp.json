@@ -1,0 +1,21 @@
+{
+  "mcpServers": {
+		"msx": {
+			"type": "stdio",
+			"command": "npx",
+			"args": ["-y", "@microsoft/msx-mcp-server@latest"],
+			"env": {
+				"npm_config_@microsoft:registry": "https://npm.pkg.github.com"
+			}
+		},
+		"oil": {
+			"type": "stdio",
+			"command": "npx",
+			"args": ["-y", "@jinlee794/obsidian-intelligence-layer@latest", "mcp"],
+			"env": {
+				"npm_config_@jinlee794:registry": "https://npm.pkg.github.com",
+				"OBSIDIAN_VAULT_PATH": "${OBSIDIAN_VAULT_PATH}"
+			}
+		}
+	}
+}

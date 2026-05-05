@@ -1,0 +1,59 @@
+---
+name: risk-surfacing
+description: 'Deal-risk radar: synthesizes field data, vault notes, and calendar signals to flag relationship decay, silent stakeholders, and looming threats. Proactive early-warning system, not a document compiler. Chains with pipeline-hygiene-triage and handoff-readiness-validation for weekly pipeline review; chains with mcem-diagnostics for full deal triage. Triggers: deal risk, risk radar, threat flag, warning signal, silent stakeholder, relationship decay, early warning, flag risks, what risks.'
+argument-hint: 'Provide opportunityId or accountId to scope the risk scan'
+---
+
+## Purpose
+
+Synthesizes signals from CRM, M365 (WorkIQ), and vault to surface execution, relationship, and delivery risks proactively — before they escalate into pipeline or customer impact.
+
+## Freedom Level
+
+**Medium** — Risk classification requires multi-source judgment; signal collection is tool-based.
+
+## Trigger
+
+- Any role requests risk review or account health check
+- Scheduled hygiene cadence for proactive risk surfacing
+- Pre-commit or pre-governance risk preparation
+
+## Flow
+
+1. **CRM signals** — Call `msx:crm_get_record` on opportunity + `msx:get_milestones({ opportunityId, statusFilter: 'active', format: 'triage', includeTasks: true })` for milestone state pre-classified by urgency with inline tasks.
+2. **M365 signals** — Call `ask_work_iq` with scoped query (apply WorkIQ scoping skill) for communication recency, engagement frequency, and sentiment.
+3. **Vault signals** — If vault is available, call `oil:get_vault_context()` for customer notes, prior risk flags, and relationship history.
+4. Classify risks by type and severity (see taxonomy below).
+5. Generate risk summary with recommended mitigations.
+
+## Risk Taxonomy
+
+| Risk Type | Signal Sources | Example |
+|---|---|---|
+| **Execution** | CRM milestone dates vs today; task completion rate | Milestone overdue by >14 days |
+| **Relationship** | M365 communication gap; sentiment shift | No customer contact in 30+ days |
+| **Pipeline** | Opportunity age vs stage; stalled progression | Stage 2 for >60 days |
+| **Delivery** | Milestone status distribution; at-risk count | >30% milestones at `msp_milestonestatus = 861980001` |
+| **Commitment** | Commit recommendation vs evidence | Committed without delivery date |
+| **Cross-role** | Missing role engagement per stage model | No CSAM activity on Stage 4 opp |
+
+## Severity Classification
+
+- **Critical**: Evidence of active customer impact or imminent deadline miss
+- **High**: Structural gap that will escalate without intervention within 2 weeks
+- **Medium**: Pattern suggests risk but no immediate trigger
+- **Low**: Informational — monitor in next cadence
+
+## Decision Logic
+
+- Cross-reference ≥2 mediums for each risk (CRM confirms signal, M365 provides evidence, or vault provides history)
+- Single-medium risk → flag medium gap, present with lower confidence
+- Route each risk to the accountable role for the current stage
+- Critical risks → escalation recommendation with minimum intervention
+
+## Output Schema
+
+- `risk_items`: list of risks with type, severity, evidence_sources, accountable_role
+- `medium_coverage`: which mediums were queryable and which were not
+- `recommended_mitigations`: specific actions per risk with skill references
+- `next_action`: names role-appropriate skill for highest-severity risk

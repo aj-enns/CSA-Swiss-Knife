@@ -1,0 +1,28 @@
+# Skill Chains Reference
+
+Pre-validated multi-skill chains for prompt-to-flow mapping.
+
+| Chain name                           | Skills (in order)                                                                                                   | Trigger pattern                                                                             |
+| ------------------------------------ | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------- |
+| Weekly pipeline review               | `pipeline-hygiene-triage` -> `handoff-readiness-validation` -> `risk-surfacing`                               | "weekly review", "pipeline cleanup + handoff + risks"                                       |
+| Pre-governance prep                  | `mcem-diagnostics` -> `milestone-health-review`                          | "governance meeting prep", "stage + health + evidence"                                      |
+| Commit-or-loopback                   | `commit-gate-enforcement` -> `non-linear-progression` -> `delivery-accountability-mapping`                    | "should we commit or loop back"                                                             |
+| Full deal triage                     | `mcem-diagnostics` -> `risk-surfacing`       | "deal stuck", "end-to-end triage"                                                           |
+| Post-proof handoff                   | `architecture-review` -> `handoff-readiness-validation`        | "proof completed, create handoff"                                                           |
+| Adoption + expansion                 | `stage-5-review`                        | "adoption health + value + expansion"                                                       |
+| SE morning prep                      | `se-execution-check`                                   | "SE daily check", "task hygiene + blockers"                                                 |
+| Account swarming                     | `account-landscape-awareness` -> `account-structure-diagram` -> `pipeline-hygiene-triage`                     | "what else is happening", "swarm opportunities", "full account view", "who else is working" |
+| Unified investment scan              | `account-landscape-awareness` -> `se-execution-check` -> `pipeline-qualification`                       | "EDE gaps", "Unified upsell", "package coverage", "where should we invest"                  |
+| Morning brief                        | `morning-brief` (parallel: vault + CRM + WorkIQ) -> `pipeline-hygiene-triage` (optional drill-down)             | "morning brief", "start my day", "catch me up", "daily dashboard"                           |
+| Proof cost modeling                  | `proof-plan-orchestration` -> `azure-pricing-model` -> `processing-spreadsheets`                              | "proof cost", "how much will this cost", "Azure pricing for POC"                            |
+| Solution cost proposal               | `azure-pricing-model` -> `processing-spreadsheets` -> `stage-5-review`                                | "cost model", "Azure pricing spreadsheet", "pricing document", "TCO comparison"             |
+| PBI portfolio + CRM triage           | PBI prompt (subagent) -> `pipeline-hygiene-triage` -> `risk-surfacing`                                            | "review Azure portfolio and flag CRM actions", "gap to target + pipeline triage"            |
+| PBI portfolio + WorkIQ               | PBI prompt (subagent) -> WorkIQ scoped by report signals -> `milestone-health-review`                                | "portfolio review + check recent comms", "what's happening with at-risk accounts"           |
+| PBI + full deal triage               | PBI prompt (subagent) -> `mcem-diagnostics` -> `risk-surfacing`           | "portfolio review then triage stalled deals", "gap analysis + deal triage"                  |
+| PBI navigator -> portfolio           | `pbi-portfolio-navigator` -> `pbi-azure-all-in-one-review` -> `pipeline-hygiene-triage` -> `risk-surfacing` | "am I on track", "gap to target", "show me my numbers"                                      |
+| PBI navigator -> service drill-down  | `pbi-portfolio-navigator` -> `pbi-azure-service-deep-dive-sl5-aio`                                              | "where is my decline coming from", "service trends", "pillar breakdown"                     |
+| PBI navigator -> full manager review | `pbi-portfolio-navigator` -> all 3 PBI prompts (subagent) -> `pipeline-hygiene-triage` -> `risk-surfacing`    | "full review", "manager review", "team performance", "give me everything"                   |
+| PBI navigator -> GHCP + portfolio    | `pbi-portfolio-navigator` -> `pbi-azure-all-in-one-review` -> `pbi-ghcp-new-logo-incentive`                   | "GHCP eligibility + portfolio gap", "incentive + attainment"                                |
+| Pipeline vault capture               | `pipeline-hygiene-triage` -> `vault-sync` (Mode 1: Opp Sync)                                                     | "sync pipeline to vault", "capture my deals", "opp sync"                                    |
+| Post-write opp capture               | write-gate -> `vault-sync` (Mode 1: Opp Sync auto-capture)                                                        | (automatic after milestone/deal-team CRM writes)                                            |
+| Morning brief + vault capture        | `morning-brief` -> `vault-sync` (Mode 1: Opp Sync auto-capture)                                                   | "morning brief" (automatic post-brief opp capture when vault is stale)                      |

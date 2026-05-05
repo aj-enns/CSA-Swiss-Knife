@@ -1,0 +1,16 @@
+{
+  "customerMap": {
+    "Microsoft": "Contoso",
+    "Contoso Ltd": "Contoso",
+    "Google": "Fabrikam",
+    "Amazon": "Northwind Traders",
+    "Apple": "Adventure Works",
+    "Meta": "Woodgrove Bank",
+    "Netflix": "Tailspin Toys",
+    "Salesforce": "Proseware Inc",
+    "Oracle": "Lucerne Publishing",
+    "SAP": "Fourth Coffee"
+  },
+  "preserveStructure": true,
+  "_comment": "Maps real customer names to fictional names for fixture scrubbing. Add entries as needed. Mapping is deterministic so cross-fixture references stay consistent."
+}

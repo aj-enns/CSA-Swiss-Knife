@@ -1,0 +1,88 @@
+# Skill Routing Evaluation Scenarios
+# Tests: given a user utterance, does the agent activate the correct skill(s)?
+
+scenarios:
+  # ── Morning Brief ──────────────────────────────────────────
+  - id: route-morning-brief
+    utterance: "start my day"
+    expected_skill: morning-brief
+    negative_skills: [pipeline-hygiene-triage, milestone-health-review]
+
+  - id: route-morning-brief-alt
+    utterance: "catch me up on everything"
+    expected_skill: morning-brief
+
+  - id: route-morning-brief-daily
+    utterance: "morning brief"
+    expected_skill: morning-brief
+
+  - id: route-morning-brief-standup
+    utterance: "daily standup prep"
+    expected_skill: morning-brief
+
+  # ── Pipeline vs Milestone disambiguation ────────────────────
+  - id: route-pipeline-not-milestone
+    utterance: "show me stale pipeline entries"
+    expected_skill: pipeline-hygiene-triage
+    negative_skills: [milestone-health-review]
+
+  - id: route-milestone-not-pipeline
+    utterance: "how are my committed milestones doing?"
+    expected_skill: milestone-health-review
+    negative_skills: [pipeline-hygiene-triage]
+
+  - id: route-disambiguation-specialist
+    utterance: "weekly review"
+    expected_skill: pipeline-hygiene-triage
+    context:
+      role: Specialist
+
+  - id: route-disambiguation-csam
+    utterance: "weekly review"
+    expected_skill: milestone-health-review
+    context:
+      role: CSAM
+
+  # ── Chain activations ──────────────────────────────────────
+  - id: route-chain-governance
+    utterance: "prep me for the Contoso governance meeting"
+    expected_skills:
+      - mcem-diagnostics
+      - milestone-health-review
+
+  - id: route-chain-deal-triage
+    utterance: "full triage on the Contoso Azure deal"
+    expected_skills:
+      - mcem-diagnostics
+      - risk-surfacing
+
+  # ── Risk surfacing ──────────────────────────────────────────
+  - id: route-risk-surfacing
+    utterance: "what risks do I have across my deals?"
+    expected_skill: risk-surfacing
+    negative_skills: [pipeline-hygiene-triage]
+
+  # ── Task hygiene ────────────────────────────────────────────
+  - id: route-task-hygiene
+    utterance: "check my CRM task records for stale entries"
+    expected_skill: se-execution-check
+    negative_skills: [milestone-health-review]
+
+  # ── Vault context ──────────────────────────────────────────
+  - id: route-vault-context
+    utterance: "what do we know about Fabrikam from our notes?"
+    expected_skill: vault-context-assembly
+
+  # ── Exit criteria ──────────────────────────────────────────
+  - id: route-exit-criteria
+    utterance: "are we ready to advance this deal to the next stage?"
+    expected_skill: mcem-diagnostics
+
+  # ── Negative: off-topic ────────────────────────────────────
+  - id: route-negative-off-topic
+    utterance: "What's the weather like today?"
+    expected_skill: null
+
+  - id: route-negative-code
+    utterance: "How do I write a for loop in Python?"
+    expected_skill: null
