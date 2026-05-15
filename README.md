@@ -55,10 +55,10 @@ npm run check
 
 ### 4. Install the plugin into Copilot CLI
 
-From the repo root:
+Replace `<owner>` with the GitHub org or username that hosts your fork:
 
 ```powershell
-copilot plugin install .
+copilot plugin install <owner>/CSA-Swiss-Knife
 ```
 
 Confirm it registered:
@@ -67,38 +67,42 @@ Confirm it registered:
 copilot plugin list
 ```
 
-You should see `mcaps-iq` listed. The dashboard extension is wired in via
-[plugin.json](plugin.json) → `extension` field.
+You should see `mcaps-iq` listed.
+
+> **Note:** The `plugin.json` → `extension` field wires in the dashboard, but
+> Copilot CLI extension loading requires a server-side `EXTENSIONS` feature
+> flag that may not be enabled for your account yet. If the dashboard does not
+> auto-launch (see below), use the manual start method.
 
 ---
 
 ## Start the Dashboard
 
-The dashboard launches **automatically** the first time you run any Copilot CLI
-prompt with the plugin loaded:
+### Option A — Automatic (requires `EXTENSIONS` flag)
+
+If your Copilot CLI account has the `EXTENSIONS` feature flag enabled, the
+dashboard launches automatically with any prompt:
 
 ```powershell
-copilot "morning brief"
+copilot -i "morning brief"
 ```
 
-What happens:
+The Copilot SDK loads
+[extension.mjs](.github/extensions/mcaps-iq-dashboard/extension.mjs),
+starts an Express + WebSocket server on **port 3850**, and opens your browser.
 
-1. The Copilot SDK loads the extension at
-   [.github/extensions/mcaps-iq-dashboard/extension.mjs](.github/extensions/mcaps-iq-dashboard/extension.mjs).
-2. The extension starts a shared Express + WebSocket server on
-   **port 3850** (singleton — multiple CLI sessions share one server).
-3. Your default browser opens to **http://127.0.0.1:3850**.
+### Option B — Manual start (works for everyone)
 
-Subsequent `copilot ...` commands attach as additional live sessions visible
+From the repo root:
+
+```powershell
+npm run dashboard
+```
+
+Then open **http://127.0.0.1:3850** in your browser.
+
+Subsequent `copilot -i ...` commands attach as additional live sessions visible
 under **Mission Control → Live**.
-
-### Manual open
-
-If the browser doesn't open, navigate to:
-
-```
-http://127.0.0.1:3850
-```
 
 ### Stop the dashboard
 
@@ -151,7 +155,8 @@ VS Code Copilot Chat (Agent mode):
 | `EADDRINUSE` on 3850 | Another instance is already running — open the URL directly, or kill the process (see *Stop* above) |
 | Empty pipeline / `whoami` fails | Start the `msx` MCP server in VS Code, ensure VPN + `az login` |
 | `401/403/404` installing deps | `npm run auth:packages` |
-| Plugin not discovered | Re-run `copilot plugin install .` from this repo root |
+| Plugin not discovered | Re-run `copilot plugin install <owner>/CSA-Swiss-Knife` |
+| Dashboard doesn't auto-launch | Your account may lack the `EXTENSIONS` feature flag — use `npm run dashboard` instead |
 | Settings or runtime files appearing as untracked | `.copilot/`, `.vault/`, `.mcaps-iq-settings.json` are runtime artifacts — already in `.gitignore` |
 
 ---
@@ -184,7 +189,7 @@ Run the bundled extension test suite:
 npm run dashboard:test
 ```
 
-Smoke-test the live server (after launching with `copilot "morning brief"`):
+Smoke-test the live server (after launching with `npm run dashboard` or `copilot -i "morning brief"`):
 
 ```powershell
 Invoke-RestMethod http://127.0.0.1:3850/api/health

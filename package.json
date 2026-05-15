@@ -41,6 +41,7 @@
     "vault:scaffold": "node scripts/setup-vault.js --scaffold-only",
     "squad:setup": "node scripts/setup-squad.js",
     "squad:check": "node scripts/setup-squad.js --check",
+    "dashboard": "node .github/extensions/mcaps-iq-dashboard/lib/shared-server.mjs",
     "dashboard:test": "node --test .github/extensions/mcaps-iq-dashboard/tests/extension-tests.mjs"
   },
   "engines": {
